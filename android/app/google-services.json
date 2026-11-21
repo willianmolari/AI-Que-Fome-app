@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "962026952192",
+    "project_id": "ai-que-fome-dba43",
+    "storage_bucket": "ai-que-fome-dba43.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:962026952192:android:47c74d261674f142286ae5",
+        "android_client_info": {
+          "package_name": "com.willianmolari.nutridobra.nutridobra"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "962026952192-b97jdca179pl5se6s39crqjl5j77nefi.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.willianmolari.nutridobra.nutridobra",
+            "certificate_hash": "18fa434fc19712e63ab080195ab6df589ab5d254"
+          }
+        },
+        {
+          "client_id": "962026952192-2udhqp7ipumoa0v1lt06jd3kbjq6ff9a.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAVNcxctFBNQeiWMNzL4bUBqt0cCYYA3X0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "962026952192-2udhqp7ipumoa0v1lt06jd3kbjq6ff9a.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
