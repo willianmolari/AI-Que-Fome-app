@@ -24,6 +24,16 @@ Este projeto é uma reimplementação funcional independente: não reutiliza
 código, layout, assets, marca, chaves ou banco de dados do aplicativo analisado.
 O relatório de engenharia reversa está em [`ANALISE_REA.md`](ANALISE_REA.md).
 
+## Download
+
+A versão 1.0.0 está publicada em
+[GitHub Releases](https://github.com/willianmolari/AI-Que-Fome-app/releases/tag/v1.0.0),
+com `app-release.apk` para instalação direta e `app-release.aab` para a
+Play Store.
+
+Política de privacidade:
+<https://willianmolari.github.io/AI-Que-Fome-app/>.
+
 ## Requisitos
 
 - Flutter 3.38.10 / Dart 3.10.9 (testado neste ambiente macOS 13) ou versão

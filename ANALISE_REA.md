@@ -130,6 +130,10 @@ Fórmulas e locais de medição conferidos em
   - SHA-256: `674b6ae0e5eaa590d1106a77776ed5b48504c5c42f943b80c27759f833861098`
 - Material da Play Store preparado em `play_store/` (listagem pt-BR, política
   de privacidade, roteiro de publicação e 4 capturas reais do aparelho).
+- Publicação da v1.0.0 no GitHub:
+  <https://github.com/willianmolari/AI-Que-Fome-app/releases/tag/v1.0.0>
+  (APK e AAB anexados); política de privacidade em
+  <https://willianmolari.github.io/AI-Que-Fome-app/>.
   - Permissão `INTERNET` confirmada no manifest compilado.
   - `minSdk 24`, `targetSdk 36`, `versionName 1.0.0`.
   - App renomeado para **Ai que fome** (pacote inalterado).

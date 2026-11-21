@@ -4,9 +4,10 @@
 
 1. **Conta Google com acesso à conta de desenvolvedor Molarizado** no
    [Play Console](https://play.google.com/console/).
-2. **URL pública da política de privacidade**: a Play Console exige essa URL
-   para apps com login/Internet. O HTML pronto está em `privacy-policy.html`
-   e também em `docs/index.html` (para GitHub Pages).
+2. **URL pública da política de privacidade**: já publicada via GitHub Pages
+   em <https://willianmolari.github.io/AI-Que-Fome-app/> (arquivo
+   `docs/index.html`, serviço configurado para a branch `main`, pasta `/docs`).
+   A Play Console exige essa URL para apps com login/Internet.
 3. Arquivos prontos nesta pasta:
    - `app-release.aab` (em `build/app/outputs/bundle/release/`);
    - `../assets_store/app-icon-play.png` (512×512);
@@ -14,16 +15,18 @@
    - `screenshots/01-diario.png` … `04-dobras.png` (1080×2340).
 4. Textos em `listing-pt-BR.md`.
 
-## Publicar a política no GitHub Pages
+## Política no GitHub Pages (já configurada)
 
-1. Criar um repositório público (por exemplo `ai-que-fome-privacidade`) na
-   conta GitHub do Molarizado.
-2. Enviar o conteúdo da pasta `play_store/docs/` para a branch `main`
-   (o arquivo precisa ficar na raiz com o nome `index.html`).
-3. Em **Settings → Pages**, escolher **Deploy from a branch**, branch `main`,
-   pasta `/ (root)` e salvar.
-4. A URL será `https://<usuario>.github.io/<repositorio>/`. É essa URL que
-   deve ser informada na Play Console.
+- Repositório: `willianmolari/AI-Que-Fome-app`
+- Origem: branch `main`, pasta `/docs`
+- URL: <https://willianmolari.github.io/AI-Que-Fome-app/>
+- Não é preciso repositório separado: o site usa o próprio `docs/index.html`.
+
+## Download da v1.0.0 no GitHub
+
+Release: <https://github.com/willianmolari/AI-Que-Fome-app/releases/tag/v1.0.0>
+
+Anexos: `app-release.apk` (53,5 MB) e `app-release.aab` (44,8 MB).
 
 ## Passo a passo no Play Console
 

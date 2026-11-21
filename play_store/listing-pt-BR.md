@@ -78,9 +78,8 @@ Resultado esperado: **Todos**.
   conta Google/Firebase (dados de conta).
 
 ## Política de privacidade
-Publicar o arquivo `privacy-policy.html` (ou `docs/index.html`) em uma URL
-pública — GitHub Pages, Google Sites ou site próprio — e informar essa URL no
-campo obrigatório da Play Console.
+URL já publicada: <https://willianmolari.github.io/AI-Que-Fome-app/>.
+É essa URL que deve ser informada no campo obrigatório da Play Console.
 
 ## Legendas das capturas
 1. Diário com calendário semanal e totais de macronutrientes.
