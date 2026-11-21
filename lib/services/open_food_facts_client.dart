@@ -60,6 +60,36 @@ class OpenFoodFactsClient {
     return items.take(pageSize).toList();
   }
 
+  /// Busca um produto pelo código de barras (EAN-13/UPC).
+  Future<FoodItem?> fetchByBarcode(String rawCode) async {
+    final code = rawCode.replaceAll(RegExp(r'\D'), '');
+    if (code.isEmpty) return null;
+
+    final uri = Uri.https(
+      _host,
+      '/api/v2/product/$code.json',
+      {'fields': 'product_name,product_name_pt,generic_name,brands,nutriments,serving_quantity,serving_size,categories_tags,code'},
+    );
+    final response = await _http.get(uri).timeout(const Duration(seconds: 20));
+    if (response.statusCode != 200) {
+      throw const OpenFoodFactsException(
+        'Não foi possível consultar o código de barras.',
+      );
+    }
+
+    final Map<String, dynamic> body;
+    try {
+      body = jsonDecode(response.body) as Map<String, dynamic>;
+    } catch (_) {
+      throw const OpenFoodFactsException(
+        'Resposta inesperada do Open Food Facts.',
+      );
+    }
+    if (body['status'] != 1) return null;
+    final product = body['product'];
+    return product is Map<String, dynamic> ? _parse(product) : null;
+  }
+
   FoodItem? _parse(Map<String, dynamic> product) {
     final name = (product['product_name'] ??
             product['product_name_pt'] ??
@@ -82,6 +112,7 @@ class OpenFoodFactsClient {
       brand: brand.isEmpty ? null : brand,
       dataType: 'Open Food Facts',
       servingSize: _servingSize(product),
+      servingUnit: _servingUnit(product),
       kcal: kcal,
       protein: _nutriment(nutriments, 'proteins_100g') ?? 0,
       carbs: _nutriment(nutriments, 'carbohydrates_100g') ?? 0,
@@ -104,6 +135,14 @@ class OpenFoodFactsClient {
     final quantity = _nutriment(product, 'serving_quantity');
     if (quantity != null && quantity > 0 && quantity <= 2000) return quantity;
     return 100;
+  }
+
+  String _servingUnit(Map<String, dynamic> product) {
+    final serving = (product['serving_size'] ?? '').toString().toLowerCase();
+    if (serving.contains('ml') || serving.contains('l ') || serving.endsWith('l')) {
+      return 'ml';
+    }
+    return 'g';
   }
 
   String _category(Map<String, dynamic> product, String name) {

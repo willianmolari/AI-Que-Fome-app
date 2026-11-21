@@ -5,7 +5,11 @@ class DiaryEntry {
   final String meal; // cafe, almoco, jantar, lanches
   final int fdcId;
   final String foodName;
+  /// Quantidade da porção. Para líquidos, representa ml em vez de gramas.
   final double grams;
+
+  /// Unidade da quantidade: `g` ou `ml`.
+  final String unit;
   final double kcal;
   final double protein;
   final double carbs;
@@ -19,6 +23,7 @@ class DiaryEntry {
     required this.fdcId,
     required this.foodName,
     required this.grams,
+    this.unit = 'g',
     required this.kcal,
     required this.protein,
     required this.carbs,
@@ -33,6 +38,7 @@ class DiaryEntry {
         'fdcId': fdcId,
         'foodName': foodName,
         'grams': grams,
+        'unit': unit,
         'kcal': kcal,
         'protein': protein,
         'carbs': carbs,
@@ -47,6 +53,7 @@ class DiaryEntry {
         fdcId: (json['fdcId'] as num).toInt(),
         foodName: json['foodName'] as String? ?? '',
         grams: (json['grams'] as num?)?.toDouble() ?? 0,
+        unit: json['unit'] as String? ?? 'g',
         kcal: (json['kcal'] as num?)?.toDouble() ?? 0,
         protein: (json['protein'] as num?)?.toDouble() ?? 0,
         carbs: (json['carbs'] as num?)?.toDouble() ?? 0,

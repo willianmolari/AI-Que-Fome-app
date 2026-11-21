@@ -7,6 +7,7 @@
 library;
 
 import '../models/food_item.dart';
+import 'beverages.dart';
 import 'common_brazilian_foods.dart';
 import 'taco_foods.dart';
 
@@ -24,6 +25,7 @@ class FoodCatalog {
     'Padaria',
     'Pratos prontos',
     'Bebidas',
+    'Líquidos',
     'Doces',
     'Fast food',
     'Suplementos',
@@ -36,6 +38,7 @@ class FoodCatalog {
     ..._fastFood,
     ..._supplements,
     ...tacoFoods,
+    ...beverages,
   ];
 
   /// Itens exibidos quando o usuário ainda não digitou nada.
@@ -66,11 +69,18 @@ class FoodCatalog {
       'taco',
     },
     String category = 'Todos',
+    List<FoodItem> extras = const [],
   }) {
     final term = FoodItem.normalizeFoodText(query);
-    return all.where((item) {
+    return [...all, ...extras].where((item) {
       if (!sources.contains(item.source)) return false;
-      if (category != 'Todos' && item.category != category) return false;
+      if (category == 'Líquidos') {
+        final isLiquid =
+            item.servingUnit == 'ml' || item.category == 'Bebidas';
+        if (!isLiquid) return false;
+      } else if (category != 'Todos' && item.category != category) {
+        return false;
+      }
       if (term.isEmpty) return true;
       return item.matches(term);
     }).toList();
@@ -177,8 +187,8 @@ final List<FoodItem> _brazilian = <FoodItem>[
   _br('Requeijão cremoso', kcal: 242, protein: 5.5, carbs: 6.0, fat: 22.0, category: 'Laticínios'),
   _br('Iogurte natural integral', kcal: 61, protein: 3.5, carbs: 4.7, fat: 3.3, category: 'Laticínios'),
   _br('Iogurte grego natural', kcal: 97, protein: 9.0, carbs: 3.6, fat: 5.0, category: 'Laticínios'),
-  _br('Leite integral', kcal: 61, protein: 3.2, carbs: 4.8, fat: 3.3, sugars: 4.8, category: 'Laticínios'),
-  _br('Leite desnatado', kcal: 34, protein: 3.4, carbs: 5.0, fat: 0.2, sugars: 5.0, category: 'Laticínios'),
+  _br('Leite integral', kcal: 61, protein: 3.2, carbs: 4.8, fat: 3.3, sugars: 4.8, servingSize: 200, servingUnit: 'ml', category: 'Laticínios'),
+  _br('Leite desnatado', kcal: 34, protein: 3.4, carbs: 5.0, fat: 0.2, sugars: 5.0, servingSize: 200, servingUnit: 'ml', category: 'Laticínios'),
   _br('Cream cheese', kcal: 342, protein: 6.0, carbs: 4.0, fat: 34.0, category: 'Laticínios'),
 
   // Frutas e verduras

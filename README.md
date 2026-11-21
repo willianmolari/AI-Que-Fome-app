@@ -18,7 +18,15 @@ Aplicativo Flutter original de diário alimentar com:
 - login com **Google via Firebase Auth**;
 - aba de **dobras cutâneas Jackson & Pollock (3 e 7 sítios)** com
   **histórico local**: salve avaliações com data, observação, medidas e
-  resultados; depois é possível carregar ou excluir cada registro.
+  resultados; depois é possível carregar ou excluir cada registro. O perfil
+  usa automaticamente o % de gordura da avaliação mais recente.
+- **contador de água** diário com meta configurável no perfil e atalhos de
+  200/300/500 ml.
+- **cadastro manual de alimentos** e leitura de **código de barras** via
+  câmera (consulta no Open Food Facts), com opção de cadastrar o produto
+  caso não seja encontrado.
+- **aviso de atualização**: o app consulta a release mais recente no GitHub e
+  oferece o download direto do APK.
 
 Este projeto é uma reimplementação funcional independente: não reutiliza
 código, layout, assets, marca, chaves ou banco de dados do aplicativo analisado.
@@ -26,10 +34,11 @@ O relatório de engenharia reversa está em [`ANALISE_REA.md`](ANALISE_REA.md).
 
 ## Download
 
-A versão 1.0.0 está publicada em
-[GitHub Releases](https://github.com/willianmolari/AI-Que-Fome-app/releases/tag/v1.0.0),
+A versão mais recente está publicada em
+[GitHub Releases](https://github.com/willianmolari/AI-Que-Fome-app/releases/latest),
 com `app-release.apk` para instalação direta e `app-release.aab` para a
-Play Store.
+Play Store. A versão 1.0.0 permanece disponível
+[aqui](https://github.com/willianmolari/AI-Que-Fome-app/releases/tag/v1.0.0).
 
 Política de privacidade:
 <https://willianmolari.github.io/AI-Que-Fome-app/>.

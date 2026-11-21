@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/account_info.dart';
 import '../models/diary_entry.dart';
+import '../models/food_item.dart';
 import '../models/skinfold_record.dart';
 import '../models/user_profile.dart';
 import '../models/weight_record.dart';
@@ -16,6 +17,8 @@ class AppState extends ChangeNotifier {
   late List<DiaryEntry> _entries;
   late List<SkinfoldRecord> _skinfoldHistory;
   late List<WeightRecord> _weightHistory;
+  late List<FoodItem> _customFoods;
+  late Map<String, double> _waterByDate;
   late UserProfile _profile;
   String? _apiKey;
   AccountInfo? _account;
@@ -41,6 +44,9 @@ class AppState extends ChangeNotifier {
     return List.unmodifiable(sorted);
   }
 
+  /// Alimentos cadastrados pelo usuário, reutilizáveis no catálogo.
+  List<FoodItem> get customFoods => List.unmodifiable(_customFoods);
+
   UserProfile get profile => _profile;
   String? get apiKey => _apiKey;
   AccountInfo? get account => _account;
@@ -51,9 +57,12 @@ class AppState extends ChangeNotifier {
     _entries = _storage.getEntries();
     _skinfoldHistory = _storage.getSkinfoldHistory();
     _weightHistory = _storage.getWeightHistory();
+    _customFoods = _storage.getCustomFoods();
+    _waterByDate = _storage.getWater();
     _profile = _storage.getProfile();
     _apiKey = _storage.getUsdaApiKey();
     _account = _storage.getAccount();
+    _syncBodyFatFromHistory(save: false);
     notifyListeners();
   }
 
@@ -81,6 +90,34 @@ class AppState extends ChangeNotifier {
     };
   }
 
+  /// Água registrada em um dia, em mililitros.
+  double waterFor(DateTime date) => _waterByDate[dateKey(date)] ?? 0;
+
+  /// Soma `ml` à água do dia (use um valor negativo para remover).
+  Future<void> addWater(DateTime date, double ml) async {
+    final key = dateKey(date);
+    final next = (_waterByDate[key] ?? 0) + ml;
+    if (next <= 0) {
+      _waterByDate.remove(key);
+    } else {
+      _waterByDate[key] = next;
+    }
+    await _storage.saveWater(_waterByDate);
+    notifyListeners();
+  }
+
+  Future<void> addCustomFood(FoodItem food) async {
+    _customFoods = [..._customFoods, food];
+    await _storage.saveCustomFoods(_customFoods);
+    notifyListeners();
+  }
+
+  Future<void> removeCustomFood(int fdcId) async {
+    _customFoods = _customFoods.where((f) => f.fdcId != fdcId).toList();
+    await _storage.saveCustomFoods(_customFoods);
+    notifyListeners();
+  }
+
   Future<void> addEntry(DiaryEntry entry) async {
     _entries = [..._entries, entry];
     await _storage.saveEntries(_entries);
@@ -96,18 +133,21 @@ class AppState extends ChangeNotifier {
   Future<void> addSkinfoldRecord(SkinfoldRecord record) async {
     _skinfoldHistory = [..._skinfoldHistory, record];
     await _storage.saveSkinfoldHistory(_skinfoldHistory);
+    await _syncBodyFatFromHistory(save: true);
     notifyListeners();
   }
 
   Future<void> removeSkinfoldRecord(String id) async {
     _skinfoldHistory = _skinfoldHistory.where((r) => r.id != id).toList();
     await _storage.saveSkinfoldHistory(_skinfoldHistory);
+    await _syncBodyFatFromHistory(save: true);
     notifyListeners();
   }
 
   Future<void> clearSkinfoldHistory() async {
     _skinfoldHistory = [];
     await _storage.saveSkinfoldHistory(_skinfoldHistory);
+    await _syncBodyFatFromHistory(save: true);
     notifyListeners();
   }
 
@@ -156,8 +196,26 @@ class AppState extends ChangeNotifier {
   Future<void> updateBodyFat(double percent) async {
     if (percent <= 0 || percent >= 100) return;
     await updateProfile(
-      _profile.copyWith(bodyFatPercent: percent.roundToDouble()),
+      _profile.copyWith(
+        bodyFatPercent: (percent * 10).roundToDouble() / 10,
+      ),
     );
+  }
+
+  /// Preenche o perfil com o % de gordura da última avaliação salva.
+  Future<void> syncBodyFatFromLatestSkinfold() async {
+    await _syncBodyFatFromHistory(save: true);
+    notifyListeners();
+  }
+
+  Future<void> _syncBodyFatFromHistory({required bool save}) async {
+    final records = skinfoldHistory; // getter já ordena do mais recente
+    final percent = records.isEmpty
+        ? 0.0
+        : (records.first.sevenSite.bodyFatPercent * 10).roundToDouble() / 10;
+    if ((_profile.bodyFatPercent - percent).abs() < 0.05) return;
+    _profile = _profile.copyWith(bodyFatPercent: percent);
+    if (save) await _storage.saveProfile(_profile);
   }
 }
 

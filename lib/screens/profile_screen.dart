@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import '../models/user_profile.dart';
 import '../models/weight_record.dart';
 import '../services/auth_service.dart';
+import '../services/update_service.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
+import '../widgets/update_dialog.dart';
 import '../widgets/weight_chart.dart';
 
 const _activityOptions = [
@@ -31,6 +33,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late TextEditingController _targetWeight;
   late TextEditingController _height;
   late TextEditingController _bodyFat;
+  late TextEditingController _waterGoal;
   late TextEditingController _kcal;
   late TextEditingController _protein;
   late TextEditingController _carbs;
@@ -40,8 +43,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late bool _darkMode;
 
   AuthService? _auth;
+  late final UpdateService _updateService;
   String? _authError;
   bool _busy = false;
+  bool _checkingUpdate = false;
 
   @override
   void initState() {
@@ -57,6 +62,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ? _profile.bodyFatPercent.toStringAsFixed(1)
           : '',
     );
+    _waterGoal = TextEditingController(
+      text: '${_profile.waterGoalMl.round()}',
+    );
     _kcal = TextEditingController(text: '${_profile.goalKcal.round()}');
     _protein = TextEditingController(text: '${_profile.goalProtein.round()}');
     _carbs = TextEditingController(text: '${_profile.goalCarbs.round()}');
@@ -65,6 +73,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _activity = _profile.activityFactor;
     _darkMode = _profile.darkMode;
 
+    _updateService = UpdateService();
     try {
       _auth = AuthService();
     } catch (error) {
@@ -85,6 +94,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ? profile.bodyFatPercent.toStringAsFixed(1)
           : '';
       if (_bodyFat.text != bodyFatText) _bodyFat.text = bodyFatText;
+      final waterText = '${profile.waterGoalMl.round()}';
+      if (_waterGoal.text == '${previous.waterGoalMl.round()}') {
+        _waterGoal.text = waterText;
+      }
       if (_name.text.isEmpty || _name.text == 'Usuário') {
         _name.text = profile.name;
       }
@@ -104,11 +117,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _targetWeight.dispose();
     _height.dispose();
     _bodyFat.dispose();
+    _waterGoal.dispose();
     _kcal.dispose();
     _protein.dispose();
     _carbs.dispose();
     _fat.dispose();
     _apiKey.dispose();
+    _updateService.dispose();
     super.dispose();
   }
 
@@ -129,6 +144,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         goalCarbs: _num(_carbs).clamp(0, 1000),
         goalFat: _num(_fat).clamp(0, 400),
         bodyFatPercent: _num(_bodyFat).clamp(0, 70),
+        waterGoalMl: _num(_waterGoal, 2000).clamp(250, 10000),
         darkMode: _darkMode,
       );
 
@@ -229,6 +245,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _toggleDark(bool value) async {
     setState(() => _darkMode = value);
     await widget.state.setDarkMode(value);
+  }
+
+  Future<void> _checkForUpdate() async {
+    setState(() => _checkingUpdate = true);
+    final info = await _updateService.check();
+    if (!mounted) return;
+    setState(() => _checkingUpdate = false);
+    if (info == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Você já está na versão mais recente.')),
+      );
+      return;
+    }
+    await showUpdateDialog(context, info);
   }
 
   @override
@@ -523,6 +553,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     suffixText: '%',
                   ),
                 ),
+                if (widget.state.skinfoldHistory.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      onPressed: () async {
+                        await widget.state.syncBodyFatFromLatestSkinfold();
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Gordura atualizada com a última avaliação '
+                              'Jackson-Pollock.',
+                            ),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.sync_outlined, size: 16),
+                      label: const Text('Usar última dobra'),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4),
+                    child: Text(
+                      'Preenche automaticamente com a % da última avaliação '
+                      'salva em Dobras.',
+                      style: TextStyle(fontSize: 11, color: muted(context)),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 12),
                 DropdownButtonFormField<double>(
                   initialValue: _activity,
@@ -613,6 +673,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(labelText: 'Gordura (g)'),
                 ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _waterGoal,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Meta de água (ml/dia)',
+                    prefixIcon: Icon(Icons.water_drop_outlined),
+                    suffixText: 'ml',
+                  ),
+                ),
               ],
             ),
           ),
@@ -639,6 +709,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   value: _darkMode,
                   onChanged: _toggleDark,
+                ),
+                const Divider(height: 18),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.system_update_outlined),
+                  title: const Text('Verificar atualização'),
+                  subtitle: Text(
+                    'Confere se há uma versão nova no GitHub',
+                    style: TextStyle(fontSize: 12, color: muted(context)),
+                  ),
+                  trailing: _checkingUpdate
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.chevron_right),
+                  onTap: _checkingUpdate ? null : _checkForUpdate,
                 ),
                 const Divider(height: 18),
                 TextField(

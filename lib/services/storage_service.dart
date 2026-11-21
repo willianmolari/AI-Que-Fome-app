@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/account_info.dart';
 import '../models/diary_entry.dart';
+import '../models/food_item.dart';
 import '../models/skinfold_record.dart';
 import '../models/user_profile.dart';
 import '../models/weight_record.dart';
@@ -16,6 +17,8 @@ class StorageService {
   static const _accountKey = 'nutridobra.account.v1';
   static const _skinfoldHistoryKey = 'nutridobra.skinfold.history.v1';
   static const _weightHistoryKey = 'nutridobra.weight.history.v1';
+  static const _customFoodsKey = 'nutridobra.custom.foods.v1';
+  static const _waterKey = 'nutridobra.water.v1';
 
   final SharedPreferences _prefs;
 
@@ -124,5 +127,44 @@ class StorageService {
       _weightHistoryKey,
       jsonEncode(records.map((r) => r.toJson()).toList()),
     );
+  }
+
+  List<FoodItem> getCustomFoods() {
+    final raw = _prefs.getString(_customFoodsKey);
+    if (raw == null || raw.isEmpty) return [];
+    try {
+      final decoded = jsonDecode(raw) as List<dynamic>;
+      return decoded
+          .whereType<Map<String, dynamic>>()
+          .map(FoodItem.fromJson)
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<bool> saveCustomFoods(List<FoodItem> foods) {
+    return _prefs.setString(
+      _customFoodsKey,
+      jsonEncode(foods.map((f) => f.toJson()).toList()),
+    );
+  }
+
+  /// Mililitros de água por data (yyyy-MM-dd).
+  Map<String, double> getWater() {
+    final raw = _prefs.getString(_waterKey);
+    if (raw == null || raw.isEmpty) return {};
+    try {
+      final decoded = jsonDecode(raw) as Map<String, dynamic>;
+      return decoded.map(
+        (key, value) => MapEntry(key, (value as num).toDouble()),
+      );
+    } catch (_) {
+      return {};
+    }
+  }
+
+  Future<bool> saveWater(Map<String, double> water) {
+    return _prefs.setString(_waterKey, jsonEncode(water));
   }
 }

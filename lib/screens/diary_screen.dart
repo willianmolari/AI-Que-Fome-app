@@ -5,6 +5,7 @@ import '../models/user_profile.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/macro_bar.dart';
+import '../widgets/water_card.dart';
 import '../widgets/week_calendar.dart';
 
 const _months = [
@@ -55,7 +56,8 @@ class DiaryScreen extends StatelessWidget {
   final AppState state;
   final DateTime date;
   final ValueChanged<DateTime> onDateChanged;
-  final VoidCallback onAddFood;
+  /// Recebe a chave da refeição onde o alimento será adicionado.
+  final ValueChanged<String> onAddFood;
 
   const DiaryScreen({
     super.key,
@@ -127,6 +129,8 @@ class DiaryScreen extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 2, 16, 24),
             children: [
               _SummaryCard(totals: totals, goal: goal),
+              const SizedBox(height: 14),
+              WaterCard(state: state, date: date),
               const SizedBox(height: 18),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -151,7 +155,7 @@ class DiaryScreen extends StatelessWidget {
                   mealKey: meal.$1,
                   mealLabel: meal.$2,
                   entries: entries.where((e) => e.meal == meal.$1).toList(),
-                  onAdd: onAddFood,
+                  onAdd: () => onAddFood(meal.$1),
                   onDelete: (id) => state.removeEntry(id),
                 ),
               ),
@@ -163,7 +167,7 @@ class DiaryScreen extends StatelessWidget {
                     'registrar seu dia.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Colors.black.withValues(alpha: 0.5),
+                      color: muted(context),
                       fontSize: 13,
                     ),
                   ),
@@ -450,7 +454,7 @@ class _MealCard extends StatelessWidget {
                             ),
                           ),
                           subtitle: Text(
-                            '${entry.grams.toStringAsFixed(0)} g • '
+                            '${entry.grams.toStringAsFixed(0)} ${entry.unit} • '
                             'P ${entry.protein.round()} • C ${entry.carbs.round()} • '
                             'G ${entry.fat.round()}',
                             style: const TextStyle(fontSize: 11),

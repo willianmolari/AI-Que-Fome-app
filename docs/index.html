@@ -12,7 +12,7 @@
 </head>
 <body>
   <h1>Política de Privacidade — Ai que fome</h1>
-  <p><strong>Vigência:</strong> 21 de novembro de 2026.</p>
+  <p><strong>Vigência:</strong> 21 de novembro de 2026 (atualizada na v1.1.0).</p>
 
   <p>O aplicativo <strong>Ai que fome</strong> respeita sua privacidade. Esta
   política explica quais dados são usados e como são tratados.</p>
@@ -20,7 +20,8 @@
   <h2>1. Dados armazenados no dispositivo</h2>
   <p>Os registros do diário alimentar, metas, perfil (nome, idade, sexo, altura,
   peso atual, peso alvo, percentual de gordura), histórico de dobras cutâneas,
-  histórico de pesagens, preferência de tema e chave opcional da API do USDA são
+  histórico de pesagens, alimentos cadastrados manualmente, contador diário de
+  água, preferência de tema e chave opcional da API do USDA são
   salvos <strong>apenas no seu dispositivo</strong>, por meio do armazenamento
   local do Android (<code>SharedPreferences</code>). Eles não são enviados a
   servidores próprios.</p>
@@ -39,17 +40,23 @@
       são enviadas à API pública para localizar produtos do Brasil.</li>
     <li><strong>USDA FoodData Central</strong> — consulta opcional de alimentos,
       feita somente quando você utiliza essa fonte.</li>
+    <li><strong>GitHub</strong> — consulta à API pública de releases para avisar
+      quando existe uma versão nova do aplicativo. Nenhum dado pessoal é
+      enviado.</li>
   </ul>
   <p>O aplicativo não usa anúncios, não possui telemetria própria e não
   compartilha os dados do seu diário com esses serviços.</p>
 
   <h2>4. Permissões</h2>
-  <p>É solicitado acesso à internet para as consultas descritas acima. Não são
-  solicitados acesso a câmera, contatos, localização nem arquivos.</p>
+  <p>É solicitado acesso à internet para as consultas descritas acima. A câmera
+  é solicitada <strong>somente quando você usa a leitura de código de barras</strong>
+  para cadastrar um produto; as imagens não são armazenadas nem enviadas a
+  servidores. Não são solicitados acesso a contatos, localização nem arquivos.</p>
 
   <h2>5. Exclusão de dados</h2>
-  <p>Você pode excluir registros do diário, dobras e pesagens diretamente no
-  aplicativo. A preferência de conta pode ser removida ao sair da conta. Para
+  <p>Você pode excluir registros do diário, dobras, pesagens e alimentos
+  cadastrados manualmente diretamente no aplicativo, além de zerar a água do
+  dia. A preferência de conta pode ser removida ao sair da conta. Para
   solicitar a exclusão dos dados de autenticação mantidos pelo Firebase,
   entre em contato pelo e-mail abaixo.</p>
 

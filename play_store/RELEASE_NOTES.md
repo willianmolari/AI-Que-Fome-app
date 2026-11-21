@@ -1,26 +1,41 @@
-# Ai que fome — v1.0.0
+# Ai que fome — v1.1.0
 
-Primeira versão pública.
+Correções e melhorias solicitadas por quem usou a v1.0.0.
 
 ## Novidades
 
-- Diário alimentar com 4 refeições, calendário semanal e totais de
-  calorias/macronutrientes.
-- Catálogo brasileiro (aveia, leite semidesnatado, pães, massas, frutas,
-  legumes, pratos prontos), tabela TACO-inspired, suplementos e fast food.
-- Busca opcional no Open Food Facts (Brasil) e no USDA FoodData Central.
-- Metas diárias com sugestão automática.
-- Perfil com nome, idade, sexo, altura, % de gordura, nível de atividade,
-  **peso atual, peso alvo e gráfico de evolução**.
-- Dobras cutâneas Jackson & Pollock (3 e 7 sítios) com **histórico local**.
-- Login opcional com Google via Firebase Auth.
-- Modo escuro em todas as telas.
-- Todos os dados ficam salvos apenas no dispositivo.
+- **Refeição correta ao adicionar**: ao tocar em “+” em café da manhã,
+  almoço, jantar ou lanches, a refeição já vem selecionada no diálogo.
+- **Bebidas e líquidos no catálogo**: refrigerantes (Coca-Cola, Pepsi,
+  Guaraná, Fanta, Sprite e zeros), águas, sucos, néctares, energéticos,
+  isotônicos e bebidas vegetais. Leite agora é medido em **ml**.
+- **Filtro “Líquidos” funcional**: encontra qualquer alimento medido em ml,
+  inclusive os cadastrados manualmente.
+- **Contador de água** no diário, com metas configuráveis no perfil e
+  atalhos de 200/300/500 ml (valor fica salvo por dia).
+- **% de gordura automático**: o perfil passa a usar o resultado do último
+  Jackson-Pollock salvo, com botão para sincronizar manualmente.
+- **Cadastro manual de alimentos**: informe nome, marca, porção, unidade
+  (g/ml), categoria e valores nutricionais. O alimento fica em “Meus
+  alimentos” e pode ser excluído.
+- **Leitura de código de barras**: use a câmera para consultar o Open Food
+  Facts. Se o produto não existir, você é convidado a cadastrá-lo.
+- **Aviso de atualização**: ao abrir o app (ou em Perfil → Verificar
+  atualização), ele consulta o GitHub Releases e oferece o download do APK.
+
+## Correções
+
+- Alimentos adicionados pelo diário não caíam sempre em “Café da manhã”.
+- Refrigerantes e líquidos ausentes ou sem unidade adequada no catálogo.
+- Filtros de categoria não retornavam bebidas.
 
 ## Instalação
 
 Baixe `app-release.apk`, permita a instalação de fontes desconhecidas no
 Android e abra o arquivo. Requer Android 7.0 (API 24) ou superior.
+
+Para atualizar a partir da v1.0.0, basta instalar o APK por cima: os dados
+locais do diário, dobras e peso são preservados.
 
 ## Arquivos desta release
 
@@ -30,10 +45,10 @@ Android e abra o arquivo. Requer Android 7.0 (API 24) ou superior.
 ## SHA-256
 
 `app-release.apk`:
-`78eeb1cc80acdc1667c476a7a1a1d217efc716d8dbcfe7f2d81e1acd5ee1bc3a`
+`dff507a4062c5ee4ad6732fd0c0a9ed81ea965055f3f490b2f675b2dc04096b5`
 
 `app-release.aab`:
-`674b6ae0e5eaa590d1106a77776ed5b48504c5c42f943b80c27759f833861098`
+`5bafec90d28a74981bdf6724eb19f1d197702560633502784ac6e2ba3f27b46a`
 
 ## Aviso
 

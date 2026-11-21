@@ -19,6 +19,9 @@ class UserProfile {
   /// Percentual de gordura informado ou preenchido pela aba de dobras.
   final double bodyFatPercent;
 
+  /// Meta diária de água em mililitros.
+  final double waterGoalMl;
+
   /// Preferência de tema. `true` = escuro.
   final bool darkMode;
 
@@ -35,6 +38,7 @@ class UserProfile {
     this.goalCarbs = 250,
     this.goalFat = 65,
     this.bodyFatPercent = 0,
+    this.waterGoalMl = 2000,
     this.darkMode = false,
   });
 
@@ -58,6 +62,7 @@ class UserProfile {
     double? goalCarbs,
     double? goalFat,
     double? bodyFatPercent,
+    double? waterGoalMl,
     bool? darkMode,
   }) {
     return UserProfile(
@@ -73,6 +78,7 @@ class UserProfile {
       goalCarbs: goalCarbs ?? this.goalCarbs,
       goalFat: goalFat ?? this.goalFat,
       bodyFatPercent: bodyFatPercent ?? this.bodyFatPercent,
+      waterGoalMl: waterGoalMl ?? this.waterGoalMl,
       darkMode: darkMode ?? this.darkMode,
     );
   }
@@ -90,6 +96,7 @@ class UserProfile {
         'goalCarbs': goalCarbs,
         'goalFat': goalFat,
         'bodyFatPercent': bodyFatPercent,
+        'waterGoalMl': waterGoalMl,
         'darkMode': darkMode,
       };
 
@@ -106,6 +113,7 @@ class UserProfile {
         goalCarbs: (json['goalCarbs'] as num?)?.toDouble() ?? 250,
         goalFat: (json['goalFat'] as num?)?.toDouble() ?? 65,
         bodyFatPercent: (json['bodyFatPercent'] as num?)?.toDouble() ?? 0,
+        waterGoalMl: (json['waterGoalMl'] as num?)?.toDouble() ?? 2000,
         darkMode: json['darkMode'] as bool? ?? false,
       );
 }

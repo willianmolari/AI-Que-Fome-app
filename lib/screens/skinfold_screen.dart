@@ -62,7 +62,7 @@ class _SkinfoldScreenState extends State<SkinfoldScreen> {
     return double.tryParse(controller.text.replaceAll(',', '.')) ?? 0;
   }
 
-  Future<void> _calculate() async {
+  void _calculate() {
     setState(() {
       _error = null;
       _result = null;
@@ -76,7 +76,6 @@ class _SkinfoldScreenState extends State<SkinfoldScreen> {
         sites: sites,
       );
       setState(() => _result = result);
-      await widget.state.updateBodyFat(result.sevenSite.bodyFatPercent);
     } on ArgumentError catch (e) {
       setState(() => _error = e.message.replaceFirst('Invalid argument(s): ', ''));
     }

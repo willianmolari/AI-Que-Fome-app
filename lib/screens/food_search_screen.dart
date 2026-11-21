@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../data/food_catalog.dart';
 import '../models/diary_entry.dart';
@@ -10,6 +12,7 @@ import '../theme/app_theme.dart';
 
 const _sourceFilters = [
   ('brasil', 'Brasil', Icons.flag_outlined),
+  ('custom', 'Meus alimentos', Icons.person_add_outlined),
   ('taco', 'TACO', Icons.menu_book_outlined),
   ('fastfood', 'Fast food', Icons.fastfood_outlined),
   ('suplemento', 'Suplementos', Icons.fitness_center_outlined),
@@ -20,6 +23,7 @@ const _sourceFilters = [
 class FoodSearchScreen extends StatefulWidget {
   final AppState state;
   final DateTime date;
+  final String initialMeal;
   final ValueChanged<DateTime> onDateChanged;
   final VoidCallback onAdded;
 
@@ -27,6 +31,7 @@ class FoodSearchScreen extends StatefulWidget {
     super.key,
     required this.state,
     required this.date,
+    this.initialMeal = 'cafe',
     required this.onDateChanged,
     required this.onAdded,
   });
@@ -42,11 +47,13 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
 
   Set<String> _sources = const {
     'brasil',
+    'custom',
     'taco',
     'fastfood',
     'suplemento',
   };
   String _category = 'Todos';
+  late String _meal;
   List<FoodItem> _localResults = [];
   List<FoodItem> _usdaResults = [];
   List<FoodItem> _offResults = [];
@@ -61,6 +68,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
     super.initState();
     _client = UsdaClient(apiKey: widget.state.apiKey);
     _offClient = OpenFoodFactsClient();
+    _meal = widget.initialMeal;
     _localResults = FoodCatalog.popular();
   }
 
@@ -70,6 +78,12 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
     if (oldWidget.state.apiKey != widget.state.apiKey) {
       _client.dispose();
       _client = UsdaClient(apiKey: widget.state.apiKey);
+    }
+    if (oldWidget.initialMeal != widget.initialMeal) {
+      _meal = widget.initialMeal;
+    }
+    if (!listEquals(oldWidget.state.customFoods, widget.state.customFoods)) {
+      _refreshLocal();
     }
   }
 
@@ -81,17 +95,24 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
     super.dispose();
   }
 
+  List<FoodItem> _localSearch(String query) {
+    final extras = _sources.contains('custom')
+        ? widget.state.customFoods
+        : const <FoodItem>[];
+    if (query.trim().isEmpty && _category == 'Todos') {
+      return [...FoodCatalog.popular(), ...extras];
+    }
+    return FoodCatalog.search(
+      query,
+      sources: _sources,
+      category: _category,
+      extras: extras,
+    );
+  }
+
   void _refreshLocal() {
     final query = _searchedTerm ?? '';
-    setState(() {
-      _localResults = query.trim().isEmpty
-          ? FoodCatalog.popular()
-          : FoodCatalog.search(
-              query,
-              sources: _sources,
-              category: _category,
-            );
-    });
+    setState(() => _localResults = _localSearch(query));
   }
 
   void _toggleSource(String source) {
@@ -138,13 +159,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
       _offError = null;
       _usdaResults = [];
       _offResults = [];
-      _localResults = query.isEmpty
-          ? FoodCatalog.popular()
-          : FoodCatalog.search(
-              query,
-              sources: _sources,
-              category: _category,
-            );
+      _localResults = _localSearch(query);
     });
 
     if (query.isNotEmpty) {
@@ -208,8 +223,9 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
   }
 
   Future<void> _selectFood(FoodItem food) async {
-    String meal = AppState.meals.first.$1;
-    final gramsController = TextEditingController(
+    String meal = _meal;
+    final unit = food.servingUnit;
+    final amountController = TextEditingController(
       text: food.servingSize.toStringAsFixed(0),
     );
 
@@ -231,7 +247,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
                 _SourceBadge(source: food.source),
                 const SizedBox(height: 10),
                 Text(
-                  'Por 100 g: ${food.kcal.round()} kcal • '
+                  'Por 100 $unit: ${food.kcal.round()} kcal • '
                   'P ${food.protein.toStringAsFixed(1)} • '
                   'C ${food.carbs.toStringAsFixed(1)} • '
                   'G ${food.fat.toStringAsFixed(1)}',
@@ -244,11 +260,11 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
                 ),
                 const SizedBox(height: 16),
                 TextField(
-                  controller: gramsController,
+                  controller: amountController,
                   keyboardType: TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(
-                    labelText: 'Quantidade (g)',
-                    suffixText: 'g',
+                  decoration: InputDecoration(
+                    labelText: 'Quantidade ($unit)',
+                    suffixText: unit,
                   ),
                   onChanged: (_) => setDialogState(() {}),
                 ),
@@ -264,10 +280,10 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
                       label: Text(
                         value == food.servingSize
                             ? '1 porção'
-                            : '${value.round()} g',
+                            : '${value.round()} $unit',
                       ),
                       onPressed: () => setDialogState(
-                        () => gramsController.text = value.toStringAsFixed(0),
+                        () => amountController.text = value.toStringAsFixed(0),
                       ),
                     ),
                   ).toList(),
@@ -319,15 +335,21 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
       ),
     );
 
-    if (confirmed != true || !context.mounted) return;
+    if (confirmed != true || !context.mounted) {
+      amountController.dispose();
+      return;
+    }
 
-    final grams = double.tryParse(
-          gramsController.text.replaceAll(',', '.'),
+    final amount = double.tryParse(
+          amountController.text.replaceAll(',', '.'),
         ) ??
         food.servingSize;
-    if (grams <= 0) return;
+    if (amount <= 0) {
+      amountController.dispose();
+      return;
+    }
 
-    final factor = grams / 100;
+    final factor = amount / 100;
     await widget.state.addEntry(
       DiaryEntry(
         id: DateTime.now().microsecondsSinceEpoch.toString(),
@@ -335,7 +357,8 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
         meal: meal,
         fdcId: food.fdcId,
         foodName: food.displayName,
-        grams: grams,
+        grams: amount,
+        unit: unit,
         kcal: food.kcal * factor,
         protein: food.protein * factor,
         carbs: food.carbs * factor,
@@ -343,15 +366,388 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
         createdAt: DateTime.now(),
       ),
     );
+    amountController.dispose();
     widget.onAdded();
 
     if (!mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('${food.displayName} adicionado ao diário.'),
         duration: const Duration(seconds: 2),
       ),
     );
+  }
+
+  Future<void> _deleteCustomFood(FoodItem food) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Excluir alimento?'),
+        content: Text('“${food.name}” será removido de Meus alimentos.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Excluir'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    await widget.state.removeCustomFood(food.fdcId);
+    messenger.showSnackBar(
+      SnackBar(content: Text('${food.name} excluído.')),
+    );
+  }
+
+  Future<void> _openBarcodeScanner() async {
+    final controller = MobileScannerController(
+      detectionSpeed: DetectionSpeed.noDuplicates,
+      facing: CameraFacing.back,
+    );
+    var handled = false;
+
+    final code = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (scannerContext) => Scaffold(
+          appBar: AppBar(
+            title: const Text('Ler código de barras'),
+            actions: [
+              IconButton(
+                tooltip: 'Lanterna',
+                onPressed: () => controller.toggleTorch(),
+                icon: const Icon(Icons.flashlight_on_outlined),
+              ),
+            ],
+          ),
+          body: MobileScanner(
+            controller: controller,
+            onDetect: (capture) {
+              if (handled) return;
+              for (final barcode in capture.barcodes) {
+                final value = barcode.rawValue;
+                if (value != null && value.isNotEmpty) {
+                  handled = true;
+                  Navigator.pop(scannerContext, value);
+                  return;
+                }
+              }
+            },
+          ),
+        ),
+      ),
+    );
+    await controller.dispose();
+    if (code == null || !mounted) return;
+    await _lookupBarcode(code);
+  }
+
+  Future<void> _lookupBarcode(String code) async {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 16),
+            Text('Buscando produto...'),
+          ],
+        ),
+      ),
+    );
+
+    FoodItem? food;
+    String? error;
+    try {
+      food = await _offClient.fetchByBarcode(code);
+    } on OpenFoodFactsException catch (e) {
+      error = e.message;
+    } catch (_) {
+      error = 'Não foi possível consultar o Open Food Facts.';
+    }
+
+    if (!mounted) return;
+    Navigator.of(context).pop(); // fecha o diálogo de carregamento
+
+    if (food != null) {
+      await _selectFood(food);
+      return;
+    }
+
+    final register = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Produto não encontrado'),
+        content: Text(
+          'Nenhum produto foi localizado para o código $code.$error\n\n'
+          'Deseja cadastrar manualmente?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Cadastrar'),
+          ),
+        ],
+      ),
+    );
+    if (register == true && mounted) {
+      await _openCustomFoodDialog(barcode: code);
+    }
+  }
+
+  Future<void> _openCustomFoodDialog({String barcode = ''}) async {
+    final nameController = TextEditingController();
+    final brandController = TextEditingController();
+    final servingController = TextEditingController(text: '100');
+    final kcalController = TextEditingController();
+    final proteinController = TextEditingController();
+    final carbsController = TextEditingController();
+    final fatController = TextEditingController();
+    final fiberController = TextEditingController();
+    final sugarsController = TextEditingController();
+    String unit = 'g';
+    String category = 'Outros';
+
+    final categoryOptions = FoodCatalog.categories
+        .where((c) => c != 'Todos' && c != 'Líquidos')
+        .toList();
+
+    try {
+      final saved = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            title: const Text('Cadastrar alimento'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (barcode.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Text(
+                        'Código de barras: $barcode',
+                        style: TextStyle(fontSize: 11, color: muted(context)),
+                      ),
+                    ),
+                  TextField(
+                    controller: nameController,
+                    textCapitalization: TextCapitalization.words,
+                    decoration: const InputDecoration(
+                      labelText: 'Nome do alimento',
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: brandController,
+                    decoration: const InputDecoration(
+                      labelText: 'Marca (opcional)',
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: servingController,
+                          keyboardType: TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          decoration: const InputDecoration(
+                            labelText: 'Porção',
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      DropdownButton<String>(
+                        value: unit,
+                        onChanged: (value) =>
+                            setDialogState(() => unit = value ?? 'g'),
+                        items: const [
+                          DropdownMenuItem(value: 'g', child: Text('g')),
+                          DropdownMenuItem(value: 'ml', child: Text('ml')),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  DropdownButtonFormField<String>(
+                    initialValue: category,
+                    decoration: const InputDecoration(labelText: 'Categoria'),
+                    items: categoryOptions
+                        .map(
+                          (c) => DropdownMenuItem(value: c, child: Text(c)),
+                        )
+                        .toList(),
+                    onChanged: (value) =>
+                        setDialogState(() => category = value ?? 'Outros'),
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    'Informe os valores nutricionais por 100 $unit:',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: kcalController,
+                          keyboardType: TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          decoration: const InputDecoration(
+                            labelText: 'Calorias',
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          controller: proteinController,
+                          keyboardType: TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          decoration: const InputDecoration(
+                            labelText: 'Proteína (g)',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: carbsController,
+                          keyboardType: TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          decoration: const InputDecoration(
+                            labelText: 'Carboidrato (g)',
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          controller: fatController,
+                          keyboardType: TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          decoration: const InputDecoration(
+                            labelText: 'Gordura (g)',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: fiberController,
+                          keyboardType: TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          decoration: const InputDecoration(
+                            labelText: 'Fibra (g)',
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          controller: sugarsController,
+                          keyboardType: TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          decoration: const InputDecoration(
+                            labelText: 'Açúcar (g)',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  if (nameController.text.trim().isEmpty) return;
+                  Navigator.pop(dialogContext, true);
+                },
+                child: const Text('Salvar'),
+              ),
+            ],
+          ),
+        ),
+      );
+      if (saved != true || !mounted) return;
+
+      double num(TextEditingController c) =>
+          double.tryParse(c.text.replaceAll(',', '.')) ?? 0;
+      final food = FoodItem(
+        fdcId: DateTime.now().microsecondsSinceEpoch,
+        name: nameController.text.trim(),
+        brand: brandController.text.trim().isEmpty
+            ? null
+            : brandController.text.trim(),
+        dataType: barcode.isEmpty
+            ? 'Cadastro manual'
+            : 'Cadastro manual · EAN $barcode',
+        servingSize: num(servingController) > 0
+            ? num(servingController)
+            : 100,
+        servingUnit: unit,
+        kcal: num(kcalController),
+        protein: num(proteinController),
+        carbs: num(carbsController),
+        fat: num(fatController),
+        fiber: num(fiberController),
+        sugars: num(sugarsController),
+        source: 'custom',
+        category: category,
+      );
+      await widget.state.addCustomFood(food);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${food.name} salvo em Meus alimentos.')),
+      );
+      await _selectFood(food);
+    } finally {
+      nameController.dispose();
+      brandController.dispose();
+      servingController.dispose();
+      kcalController.dispose();
+      proteinController.dispose();
+      carbsController.dispose();
+      fatController.dispose();
+      fiberController.dispose();
+      sugarsController.dispose();
+    }
   }
 
   @override
@@ -433,7 +829,57 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
                 ),
                 onChanged: (_) => setState(() {}),
               ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _openBarcodeScanner,
+                      icon: const Icon(Icons.qr_code_scanner_outlined, size: 18),
+                      label: const Text('Ler código'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _openCustomFoodDialog,
+                      icon: const Icon(Icons.add_circle_outline, size: 18),
+                      label: const Text('Cadastrar alimento'),
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 10),
+              Row(
+                children: [
+                  Text(
+                    'Adicionar em:',
+                    style: TextStyle(fontSize: 12, color: muted(context)),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          for (final option in AppState.meals)
+                            Padding(
+                              padding: const EdgeInsets.only(right: 6),
+                              child: ChoiceChip(
+                                label: Text(option.$2),
+                                selected: _meal == option.$1,
+                                onSelected: (_) =>
+                                    setState(() => _meal = option.$1),
+                                visualDensity: VisualDensity.compact,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
                 children: [
@@ -533,7 +979,13 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
           ..._localResults.map(
             (food) => Padding(
               padding: const EdgeInsets.only(bottom: 8),
-              child: _FoodTile(food: food, onTap: () => _selectFood(food)),
+              child: _FoodTile(
+                food: food,
+                onTap: () => _selectFood(food),
+                onDelete: food.source == 'custom'
+                    ? () => _deleteCustomFood(food)
+                    : null,
+              ),
             ),
           ),
         ],
@@ -560,7 +1012,13 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
           ..._offResults.map(
             (food) => Padding(
               padding: const EdgeInsets.only(bottom: 8),
-              child: _FoodTile(food: food, onTap: () => _selectFood(food)),
+              child: _FoodTile(
+                food: food,
+                onTap: () => _selectFood(food),
+                onDelete: food.source == 'custom'
+                    ? () => _deleteCustomFood(food)
+                    : null,
+              ),
             ),
           ),
         ],
@@ -575,7 +1033,13 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
           ..._usdaResults.map(
             (food) => Padding(
               padding: const EdgeInsets.only(bottom: 8),
-              child: _FoodTile(food: food, onTap: () => _selectFood(food)),
+              child: _FoodTile(
+                food: food,
+                onTap: () => _selectFood(food),
+                onDelete: food.source == 'custom'
+                    ? () => _deleteCustomFood(food)
+                    : null,
+              ),
             ),
           ),
         ],
@@ -597,6 +1061,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
       ('Suplementos', Icons.fitness_center_outlined, 'Suplementos'),
       ('Doces', Icons.cake_outlined, 'Doces'),
       ('Bebidas', Icons.local_drink_outlined, 'Bebidas'),
+      ('Líquidos', Icons.water_drop_outlined, 'Líquidos'),
     ];
 
     return ListView(
@@ -679,7 +1144,13 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
           ..._localResults.take(20).map(
                 (food) => Padding(
                   padding: const EdgeInsets.only(bottom: 8),
-                  child: _FoodTile(food: food, onTap: () => _selectFood(food)),
+                  child: _FoodTile(
+                food: food,
+                onTap: () => _selectFood(food),
+                onDelete: food.source == 'custom'
+                    ? () => _deleteCustomFood(food)
+                    : null,
+              ),
                 ),
               ),
         const SizedBox(height: 10),
@@ -725,8 +1196,9 @@ class _SectionTitle extends StatelessWidget {
 class _FoodTile extends StatelessWidget {
   final FoodItem food;
   final VoidCallback onTap;
+  final VoidCallback? onDelete;
 
-  const _FoodTile({required this.food, required this.onTap});
+  const _FoodTile({required this.food, required this.onTap, this.onDelete});
 
   @override
   Widget build(BuildContext context) {
@@ -775,7 +1247,22 @@ class _FoodTile extends StatelessWidget {
             ],
           ),
         ),
-        trailing: const Icon(Icons.add_circle_outline, color: Colors.green),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.add_circle_outline, color: Colors.green),
+            if (onDelete != null)
+              IconButton(
+                tooltip: 'Excluir alimento',
+                onPressed: onDelete,
+                icon: Icon(
+                  Icons.delete_outline,
+                  size: 18,
+                  color: Theme.of(context).colorScheme.error,
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -790,12 +1277,20 @@ class _SourceBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final label = switch (source) {
       'brasil' => 'BRASIL',
+      'custom' => 'MEU ALIMENTO',
+      'taco' => 'TACO',
       'fastfood' => 'FAST FOOD',
+      'suplemento' => 'SUPLEMENTO',
+      'openfoodfacts' => 'OPEN FOOD FACTS',
       _ => 'USDA',
     };
     final color = switch (source) {
       'brasil' => const Color(0xFF1B7F5A),
+      'custom' => const Color(0xFF8A6BB0),
+      'taco' => const Color(0xFF2E7D9A),
       'fastfood' => const Color(0xFFD98C3F),
+      'suplemento' => const Color(0xFFB0467A),
+      'openfoodfacts' => const Color(0xFF4A6FA5),
       _ => const Color(0xFF3F72AF),
     };
     return Container(

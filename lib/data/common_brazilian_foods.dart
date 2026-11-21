@@ -59,7 +59,7 @@ final List<FoodItem> commonBrazilianFoods = <FoodItem>[
   _common('Linhaça', kcal: 534, protein: 18.3, carbs: 28.9, fat: 42.2, fiber: 27.3, category: 'Grãos e cereais'),
 
   // Leites e bebidas vegetais
-  _common('Leite semidesnatado', kcal: 46, protein: 3.2, carbs: 4.8, fat: 1.5, sugars: 4.8, category: 'Laticínios', servingUnit: 'ml'),
+  _common('Leite semidesnatado', kcal: 46, protein: 3.2, carbs: 4.8, fat: 1.5, sugars: 4.8, category: 'Laticínios', servingSize: 200, servingUnit: 'ml'),
   _common('Leite semidesnatado em pó', kcal: 356, protein: 25.0, carbs: 50.0, fat: 8.0, sugars: 50.0, category: 'Laticínios'),
   _common('Leite integral em pó', kcal: 495, protein: 26.0, carbs: 38.0, fat: 27.0, sugars: 38.0, category: 'Laticínios'),
   _common('Leite condensado', kcal: 320, protein: 7.8, carbs: 72.0, fat: 1.0, sugars: 55.0, category: 'Laticínios'),
