@@ -46,6 +46,36 @@ class DiaryEntry {
         'createdAt': createdAt.toIso8601String(),
       };
 
+  DiaryEntry copyWith({
+    String? id,
+    String? date,
+    String? meal,
+    int? fdcId,
+    String? foodName,
+    double? grams,
+    String? unit,
+    double? kcal,
+    double? protein,
+    double? carbs,
+    double? fat,
+    DateTime? createdAt,
+  }) {
+    return DiaryEntry(
+      id: id ?? this.id,
+      date: date ?? this.date,
+      meal: meal ?? this.meal,
+      fdcId: fdcId ?? this.fdcId,
+      foodName: foodName ?? this.foodName,
+      grams: grams ?? this.grams,
+      unit: unit ?? this.unit,
+      kcal: kcal ?? this.kcal,
+      protein: protein ?? this.protein,
+      carbs: carbs ?? this.carbs,
+      fat: fat ?? this.fat,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
   factory DiaryEntry.fromJson(Map<String, dynamic> json) => DiaryEntry(
         id: json['id'] as String,
         date: json['date'] as String,

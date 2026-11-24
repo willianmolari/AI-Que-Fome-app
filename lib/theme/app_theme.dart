@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
-/// Temas e helpers de cor que funcionam nos modos claro e escuro.
+/// Tema inspirado no visual do macOS: superfícies neutras, cartões com borda
+/// fina, cantos arredondados e sombras suaves. Funciona nos modos claro e
+/// escuro.
 class AppTheme {
   AppTheme._();
 
@@ -16,32 +18,41 @@ class AppTheme {
       seedColor: _seed,
       brightness: brightness,
     );
+    final background = isDark ? const Color(0xFF1C1C1E) : const Color(0xFFF5F5F7);
+    final cardColor = isDark ? const Color(0xFF2C2C2E) : Colors.white;
+    final border = isDark
+        ? const Color(0xFF3A3A3C)
+        : const Color(0xFFE3E3E8);
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
-      scaffoldBackgroundColor: isDark ? const Color(0xFF0F1512) : const Color(0xFFF3F7F4),
+      scaffoldBackgroundColor: background,
+      splashFactory: InkSparkle.splashFactory,
       cardTheme: CardThemeData(
         elevation: 0,
-        color: scheme.surface,
-        surfaceTintColor: scheme.surface,
+        color: cardColor,
+        surfaceTintColor: cardColor,
+        margin: const EdgeInsets.symmetric(vertical: 6),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(color: border),
         ),
+        shadowColor: isDark ? Colors.black54 : const Color(0x1A000000),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: isDark ? scheme.surfaceContainerHigh : Colors.white,
+        fillColor: isDark ? const Color(0xFF3A3A3C) : const Color(0xFFF5F5F7),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: scheme.outline.withValues(alpha: 0.4)),
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: border),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: scheme.outline.withValues(alpha: 0.4)),
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: border),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide(color: scheme.primary, width: 1.6),
         ),
         contentPadding: const EdgeInsets.symmetric(
@@ -49,14 +60,55 @@ class AppTheme {
           vertical: 12,
         ),
       ),
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: ButtonStyle(
+          shape: WidgetStateProperty.all(
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: cardColor,
+        surfaceTintColor: cardColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+          side: BorderSide(color: border),
+        ),
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: cardColor,
+        surfaceTintColor: cardColor,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+      ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: scheme.surface,
-        surfaceTintColor: scheme.surface,
+        backgroundColor: cardColor,
+        surfaceTintColor: cardColor,
         elevation: 0,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         indicatorShape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
         ),
+      ),
+      listTileTheme: ListTileThemeData(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
   }

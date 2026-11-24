@@ -9,6 +9,7 @@ library;
 import '../models/food_item.dart';
 import 'beverages.dart';
 import 'common_brazilian_foods.dart';
+import 'extra_foods.dart';
 import 'taco_foods.dart';
 
 class FoodCatalog {
@@ -35,6 +36,7 @@ class FoodCatalog {
   static final List<FoodItem> all = <FoodItem>[
     ..._brazilian,
     ...commonBrazilianFoods,
+    ...extraFoods,
     ..._fastFood,
     ..._supplements,
     ...tacoFoods,

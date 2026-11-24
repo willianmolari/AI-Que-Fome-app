@@ -124,6 +124,61 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Adiciona várias porções de uma vez (seleção múltipla no buscador).
+  Future<void> addEntries(List<DiaryEntry> newEntries) async {
+    if (newEntries.isEmpty) return;
+    _entries = [..._entries, ...newEntries];
+    await _storage.saveEntries(_entries);
+    notifyListeners();
+  }
+
+  /// Atualiza uma porção já registrada (nome, quantidade ou macros).
+  Future<void> updateEntry(DiaryEntry entry) async {
+    _entries = _entries.map((e) => e.id == entry.id ? entry : e).toList();
+    await _storage.saveEntries(_entries);
+    notifyListeners();
+  }
+
+  /// Copia todos os alimentos de uma refeição para outra data/refeição.
+  /// Retorna a quantidade de itens copiados.
+  Future<int> copyMeal({
+    required String fromDate,
+    required String fromMeal,
+    required String toDate,
+    required String toMeal,
+    bool replace = false,
+  }) async {
+    final source = entriesFor(fromDate)
+        .where((e) => e.meal == fromMeal)
+        .toList();
+    if (source.isEmpty) return 0;
+
+    final now = DateTime.now();
+    final copies = source.map((e) {
+      return e.copyWith(
+        id: '${now.microsecondsSinceEpoch}_${e.id}',
+        date: toDate,
+        meal: toMeal,
+        createdAt: now,
+      );
+    }).toList();
+
+    final targetHasItems = _entries.any(
+      (e) => e.date == toDate && e.meal == toMeal,
+    );
+
+    _entries = replace && targetHasItems
+        ? [
+            ..._entries.where((e) => !(e.date == toDate && e.meal == toMeal)),
+            ...copies,
+          ]
+        : [..._entries, ...copies];
+
+    await _storage.saveEntries(_entries);
+    notifyListeners();
+    return copies.length;
+  }
+
   Future<void> removeEntry(String id) async {
     _entries = _entries.where((e) => e.id != id).toList();
     await _storage.saveEntries(_entries);

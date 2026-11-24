@@ -27,6 +27,16 @@ Aplicativo Flutter original de diário alimentar com:
   caso não seja encontrado.
 - **aviso de atualização**: o app consulta a release mais recente no GitHub e
   oferece o download direto do APK.
+- **busca sob demanda**: sem aba dedicada — toque em “Buscar alimento” na
+  refeição desejada; a refeição é inferida do clique.
+- **seleção múltipla**: marque vários alimentos com checkboxes, ajuste
+  porção/nome/macros de cada um e adicione todos de uma vez.
+- **edição de porção** nos itens já registrados no diário.
+- **cópia de refeição** entre dias e refeições (com opção de substituir).
+- **catálogo estendido** com 125 novos alimentos, incluindo filé de sasami e
+  muitas carnes.
+- **visual inspirado no macOS** e **gráfico semanal** de calorias, macros e
+  água.
 
 Este projeto é uma reimplementação funcional independente: não reutiliza
 código, layout, assets, marca, chaves ou banco de dados do aplicativo analisado.

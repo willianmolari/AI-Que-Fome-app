@@ -65,7 +65,6 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _tab = 0;
   DateTime _date = DateTime.now();
-  String _pendingMeal = 'cafe';
   late final UpdateService _updateService;
 
   @override
@@ -89,10 +88,37 @@ class _HomePageState extends State<HomePage> {
 
   void _changeDate(DateTime value) => setState(() => _date = value);
 
-  void _goToSearch([String? meal]) => setState(() {
-        _pendingMeal = meal ?? 'cafe';
-        _tab = 1;
-      });
+  /// A busca abre sob demanda, a partir do botão “+” da refeição. A refeição
+  /// já vem definida pelo clique, então o diálogo não precisa pedir isso.
+  Future<void> _openFoodSearch(String meal) async {
+    final added = await showModalBottomSheet<int>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => SizedBox(
+        height: MediaQuery.sizeOf(sheetContext).height * 0.94,
+        child: ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          child: FoodSearchScreen(
+            state: widget.state,
+            date: _date,
+            meal: meal,
+          ),
+        ),
+      ),
+    );
+
+    if (added != null && added > 0 && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '$added ${added == 1 ? 'alimento adicionado' : 'alimentos adicionados'}.',
+          ),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -101,14 +127,7 @@ class _HomePageState extends State<HomePage> {
         state: widget.state,
         date: _date,
         onDateChanged: _changeDate,
-        onAddFood: _goToSearch,
-      ),
-      FoodSearchScreen(
-        state: widget.state,
-        date: _date,
-        initialMeal: _pendingMeal,
-        onDateChanged: _changeDate,
-        onAdded: () => setState(() => _tab = 0),
+        onAddFood: _openFoodSearch,
       ),
       ProfileScreen(state: widget.state),
       SkinfoldScreen(state: widget.state),
@@ -124,11 +143,6 @@ class _HomePageState extends State<HomePage> {
             icon: Icon(Icons.receipt_long_outlined),
             selectedIcon: Icon(Icons.receipt_long),
             label: 'Diário',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.search_outlined),
-            selectedIcon: Icon(Icons.search),
-            label: 'Alimentos',
           ),
           NavigationDestination(
             icon: Icon(Icons.person_outline),

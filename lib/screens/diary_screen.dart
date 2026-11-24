@@ -5,8 +5,11 @@ import '../models/user_profile.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/macro_bar.dart';
+import '../widgets/mac_window_dots.dart';
+import '../widgets/portion_editor.dart';
 import '../widgets/water_card.dart';
 import '../widgets/week_calendar.dart';
+import '../widgets/weekly_chart.dart';
 
 const _months = [
   'janeiro',
@@ -56,7 +59,7 @@ class DiaryScreen extends StatelessWidget {
   final AppState state;
   final DateTime date;
   final ValueChanged<DateTime> onDateChanged;
-  /// Recebe a chave da refeição onde o alimento será adicionado.
+  /// Recebe a chave da refeição onde os alimentos serão adicionados.
   final ValueChanged<String> onAddFood;
 
   const DiaryScreen({
@@ -66,6 +69,166 @@ class DiaryScreen extends StatelessWidget {
     required this.onDateChanged,
     required this.onAddFood,
   });
+
+  Future<void> _editEntry(BuildContext context, DiaryEntry entry) async {
+    final edited = await showPortionEditor(
+      context,
+      PortionData(
+        name: entry.foodName,
+        amount: entry.grams,
+        unit: entry.unit,
+        kcal: entry.kcal,
+        protein: entry.protein,
+        carbs: entry.carbs,
+        fat: entry.fat,
+      ),
+      title: 'Editar alimento',
+    );
+    if (edited == null || !context.mounted) return;
+    await state.updateEntry(
+      entry.copyWith(
+        foodName: edited.name,
+        grams: edited.amount,
+        unit: edited.unit,
+        kcal: edited.kcal,
+        protein: edited.protein,
+        carbs: edited.carbs,
+        fat: edited.fat,
+      ),
+    );
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('${edited.name} atualizado.')),
+    );
+  }
+
+  Future<void> _copyMeal(BuildContext context, String mealKey) async {
+    String source = 'previous';
+    String targetMeal = mealKey;
+    String targetWhen = 'today';
+    bool replace = false;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: Row(
+            children: [
+              const Icon(Icons.content_copy_outlined),
+              const SizedBox(width: 10),
+              const Expanded(child: Text('Copiar refeição')),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Origem',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 6),
+                DropdownButtonFormField<String>(
+                  initialValue: source,
+                  decoration: const InputDecoration(labelText: 'Copiar de'),
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'previous',
+                      child: Text('Dia anterior (mesma refeição)'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'current',
+                      child: Text('Este dia (mesma refeição)'),
+                    ),
+                  ],
+                  onChanged: (value) =>
+                      setState(() => source = value ?? 'previous'),
+                ),
+                const SizedBox(height: 14),
+                const Text(
+                  'Destino',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 6),
+                DropdownButtonFormField<String>(
+                  initialValue: targetMeal,
+                  decoration: const InputDecoration(labelText: 'Refeição'),
+                  items: AppState.meals
+                      .map(
+                        (m) => DropdownMenuItem(
+                          value: m.$1,
+                          child: Text(m.$2),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) =>
+                      setState(() => targetMeal = value ?? mealKey),
+                ),
+                const SizedBox(height: 10),
+                DropdownButtonFormField<String>(
+                  initialValue: targetWhen,
+                  decoration: const InputDecoration(labelText: 'Data'),
+                  items: const [
+                    DropdownMenuItem(value: 'today', child: Text('Este dia')),
+                    DropdownMenuItem(
+                      value: 'tomorrow',
+                      child: Text('Próximo dia'),
+                    ),
+                  ],
+                  onChanged: (value) =>
+                      setState(() => targetWhen = value ?? 'today'),
+                ),
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: replace,
+                  onChanged: (value) =>
+                      setState(() => replace = value ?? false),
+                  title: const Text('Substituir itens existentes'),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Copiar'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (confirmed != true) return;
+
+    final fromDate = source == 'previous'
+        ? dateKey(date.subtract(const Duration(days: 1)))
+        : dateKey(date);
+    final toDate = targetWhen == 'tomorrow'
+        ? dateKey(date.add(const Duration(days: 1)))
+        : dateKey(date);
+
+    final count = await state.copyMeal(
+      fromDate: fromDate,
+      fromMeal: mealKey,
+      toDate: toDate,
+      toMeal: targetMeal,
+      replace: replace,
+    );
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          count == 0
+              ? 'A refeição de origem está vazia.'
+              : '$count ${count == 1 ? 'alimento copiado' : 'alimentos copiados'}.',
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -84,13 +247,14 @@ class DiaryScreen extends StatelessWidget {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
           child: Row(
             children: [
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    const MacWindowDots(),
                     Text(
                       'Meu diário',
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
@@ -131,6 +295,8 @@ class DiaryScreen extends StatelessWidget {
               _SummaryCard(totals: totals, goal: goal),
               const SizedBox(height: 14),
               WaterCard(state: state, date: date),
+              const SizedBox(height: 14),
+              WeeklyChart(state: state, date: date),
               const SizedBox(height: 18),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -156,6 +322,8 @@ class DiaryScreen extends StatelessWidget {
                   mealLabel: meal.$2,
                   entries: entries.where((e) => e.meal == meal.$1).toList(),
                   onAdd: () => onAddFood(meal.$1),
+                  onEdit: (entry) => _editEntry(context, entry),
+                  onCopy: () => _copyMeal(context, meal.$1),
                   onDelete: (id) => state.removeEntry(id),
                 ),
               ),
@@ -163,8 +331,8 @@ class DiaryScreen extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.all(20),
                   child: Text(
-                    'Toque em “Adicionar” em uma refeição para começar a '
-                    'registrar seu dia.',
+                    'Toque em “+” em uma refeição para buscar e adicionar '
+                    'vários alimentos de uma vez.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: muted(context),
@@ -346,6 +514,8 @@ class _MealCard extends StatelessWidget {
   final String mealLabel;
   final List<DiaryEntry> entries;
   final VoidCallback onAdd;
+  final ValueChanged<DiaryEntry> onEdit;
+  final VoidCallback onCopy;
   final ValueChanged<String> onDelete;
 
   const _MealCard({
@@ -353,6 +523,8 @@ class _MealCard extends StatelessWidget {
     required this.mealLabel,
     required this.entries,
     required this.onAdd,
+    required this.onEdit,
+    required this.onCopy,
     required this.onDelete,
   });
 
@@ -401,9 +573,14 @@ class _MealCard extends StatelessWidget {
                     fontSize: 13,
                   ),
                 ),
-                const SizedBox(width: 4),
+                const SizedBox(width: 2),
                 IconButton.filledTonal(
-                  tooltip: 'Adicionar alimento',
+                  tooltip: 'Copiar refeição',
+                  onPressed: onCopy,
+                  icon: const Icon(Icons.content_copy_outlined, size: 18),
+                ),
+                IconButton.filledTonal(
+                  tooltip: 'Buscar e adicionar alimentos',
                   onPressed: onAdd,
                   icon: const Icon(Icons.add, size: 20),
                 ),
@@ -415,7 +592,7 @@ class _MealCard extends StatelessWidget {
                 child: TextButton.icon(
                   onPressed: onAdd,
                   icon: const Icon(Icons.add_circle_outline, size: 18),
-                  label: const Text('Adicionar alimento'),
+                  label: const Text('Buscar alimento'),
                 ),
               )
             else
@@ -459,12 +636,27 @@ class _MealCard extends StatelessWidget {
                             'G ${entry.fat.round()}',
                             style: const TextStyle(fontSize: 11),
                           ),
-                          trailing: Text(
-                            '${entry.kcal.round()} kcal',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                            ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                '${entry.kcal.round()} kcal',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(width: 2),
+                              IconButton(
+                                tooltip: 'Editar porção',
+                                onPressed: () => onEdit(entry),
+                                icon: Icon(
+                                  Icons.tune_outlined,
+                                  size: 18,
+                                  color: muted(context),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),

@@ -9,6 +9,8 @@ import '../services/open_food_facts_client.dart';
 import '../services/usda_client.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
+import '../widgets/mac_window_dots.dart';
+import '../widgets/portion_editor.dart';
 
 const _sourceFilters = [
   ('brasil', 'Brasil', Icons.flag_outlined),
@@ -20,20 +22,18 @@ const _sourceFilters = [
   ('usda', 'USDA', Icons.public_outlined),
 ];
 
+/// Modal de busca. A refeição já é conhecida por quem abriu o modal e não é
+/// exibida: o usuário escolhe quantos alimentos quiser e confirma todos juntos.
 class FoodSearchScreen extends StatefulWidget {
   final AppState state;
   final DateTime date;
-  final String initialMeal;
-  final ValueChanged<DateTime> onDateChanged;
-  final VoidCallback onAdded;
+  final String meal;
 
   const FoodSearchScreen({
     super.key,
     required this.state,
     required this.date,
-    this.initialMeal = 'cafe',
-    required this.onDateChanged,
-    required this.onAdded,
+    required this.meal,
   });
 
   @override
@@ -53,7 +53,8 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
     'suplemento',
   };
   String _category = 'Todos';
-  late String _meal;
+  final Map<int, PortionData> _selected = <int, PortionData>{};
+
   List<FoodItem> _localResults = [];
   List<FoodItem> _usdaResults = [];
   List<FoodItem> _offResults = [];
@@ -61,15 +62,13 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
   bool _loadingOff = false;
   String? _error;
   String? _offError;
-  String? _searchedTerm;
 
   @override
   void initState() {
     super.initState();
     _client = UsdaClient(apiKey: widget.state.apiKey);
     _offClient = OpenFoodFactsClient();
-    _meal = widget.initialMeal;
-    _localResults = FoodCatalog.popular();
+    _localResults = _localSearch('');
   }
 
   @override
@@ -78,9 +77,6 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
     if (oldWidget.state.apiKey != widget.state.apiKey) {
       _client.dispose();
       _client = UsdaClient(apiKey: widget.state.apiKey);
-    }
-    if (oldWidget.initialMeal != widget.initialMeal) {
-      _meal = widget.initialMeal;
     }
     if (!listEquals(oldWidget.state.customFoods, widget.state.customFoods)) {
       _refreshLocal();
@@ -111,8 +107,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
   }
 
   void _refreshLocal() {
-    final query = _searchedTerm ?? '';
-    setState(() => _localResults = _localSearch(query));
+    setState(() => _localResults = _localSearch(_controller.text.trim()));
   }
 
   void _toggleSource(String source) {
@@ -132,14 +127,18 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
       if (_sources.contains('usda')) {
         _searchUsda(query);
       } else {
-        _usdaResults = [];
-        _error = null;
+        setState(() {
+          _usdaResults = [];
+          _error = null;
+        });
       }
       if (_sources.contains('openfoodfacts')) {
         _searchOpenFoodFacts(query);
       } else {
-        _offResults = [];
-        _offError = null;
+        setState(() {
+          _offResults = [];
+          _offError = null;
+        });
       }
     }
   }
@@ -154,7 +153,6 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
     if (term != null) _controller.text = term;
 
     setState(() {
-      _searchedTerm = query;
       _error = null;
       _offError = null;
       _usdaResults = [];
@@ -162,221 +160,107 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
       _localResults = _localSearch(query);
     });
 
-    if (query.isNotEmpty) {
-      if (_sources.contains('usda')) _searchUsda(query);
-      if (_sources.contains('openfoodfacts')) _searchOpenFoodFacts(query);
-    }
+    if (query.isEmpty) return;
+    if (_sources.contains('usda')) _searchUsda(query);
+    if (_sources.contains('openfoodfacts')) _searchOpenFoodFacts(query);
   }
 
   Future<void> _searchUsda(String query) async {
-    setState(() {
-      _loadingUsda = true;
-      _error = null;
-    });
+    setState(() => _loadingUsda = true);
     try {
-      final foods = await _client.search(query);
+      final results = await _client.search(query, pageSize: 15);
       if (!mounted) return;
       setState(() {
-        _usdaResults = foods.take(20).toList();
-        _loadingUsda = false;
+        _usdaResults = results;
+        _error = null;
       });
-    } on UsdaException catch (e) {
+    } catch (error) {
       if (!mounted) return;
-      setState(() {
-        _error = e.message;
-        _loadingUsda = false;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _error = 'Não foi possível consultar o USDA. Verifique sua conexão.';
-        _loadingUsda = false;
-      });
+      setState(() => _error = 'USDA: $error');
+    } finally {
+      if (mounted) setState(() => _loadingUsda = false);
     }
   }
 
   Future<void> _searchOpenFoodFacts(String query) async {
-    setState(() {
-      _loadingOff = true;
-      _offError = null;
-    });
+    setState(() => _loadingOff = true);
     try {
-      final foods = await _offClient.search(query);
+      final results = await _offClient.search(query, pageSize: 15);
       if (!mounted) return;
       setState(() {
-        _offResults = foods;
-        _loadingOff = false;
+        _offResults = results;
+        _offError = null;
       });
-    } on OpenFoodFactsException catch (e) {
+    } on OpenFoodFactsException catch (error) {
       if (!mounted) return;
-      setState(() {
-        _offError = e.message;
-        _loadingOff = false;
-      });
+      setState(() => _offError = error.message);
     } catch (_) {
       if (!mounted) return;
-      setState(() {
-        _offError = 'Não foi possível consultar o Open Food Facts.';
-        _loadingOff = false;
-      });
+      setState(() => _offError = 'Não foi possível consultar o Open Food Facts.');
+    } finally {
+      if (mounted) setState(() => _loadingOff = false);
     }
   }
 
-  Future<void> _selectFood(FoodItem food) async {
-    String meal = _meal;
-    final unit = food.servingUnit;
-    final amountController = TextEditingController(
-      text: food.servingSize.toStringAsFixed(0),
-    );
+  PortionData _initialPortion(FoodItem food) => PortionData(
+        name: food.displayName,
+        amount: food.servingSize,
+        unit: food.servingUnit,
+        kcal: food.kcalForServing,
+        protein: food.proteinForServing,
+        carbs: food.carbsForServing,
+        fat: food.fatForServing,
+      );
 
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Adicionar porção'),
-          content: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  food.displayName,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 4),
-                _SourceBadge(source: food.source),
-                const SizedBox(height: 10),
-                Text(
-                  'Por 100 $unit: ${food.kcal.round()} kcal • '
-                  'P ${food.protein.toStringAsFixed(1)} • '
-                  'C ${food.carbs.toStringAsFixed(1)} • '
-                  'G ${food.fat.toStringAsFixed(1)}',
-                  style: TextStyle(fontSize: 11, color: muted(context)),
-                ),
-                Text(
-                  'Por porção (${food.servingSize.toStringAsFixed(0)} '
-                  '${food.servingUnit}): ${food.kcalForServing.round()} kcal',
-                  style: TextStyle(fontSize: 11, color: muted(context)),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: amountController,
-                  keyboardType: TextInputType.numberWithOptions(decimal: true),
-                  decoration: InputDecoration(
-                    labelText: 'Quantidade ($unit)',
-                    suffixText: unit,
-                  ),
-                  onChanged: (_) => setDialogState(() {}),
-                ),
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 6,
-                  children: [
-                    food.servingSize,
-                    100,
-                    150,
-                  ].map(
-                    (value) => ActionChip(
-                      label: Text(
-                        value == food.servingSize
-                            ? '1 porção'
-                            : '${value.round()} $unit',
-                      ),
-                      onPressed: () => setDialogState(
-                        () => amountController.text = value.toStringAsFixed(0),
-                      ),
-                    ),
-                  ).toList(),
-                ),
-                const SizedBox(height: 14),
-                DropdownButtonFormField<String>(
-                  initialValue: meal,
-                  decoration: const InputDecoration(labelText: 'Refeição'),
-                  items: AppState.meals
-                      .map(
-                        (m) => DropdownMenuItem(
-                          value: m.$1,
-                          child: Text(m.$2),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (value) {
-                    if (value != null) setDialogState(() => meal = value);
-                  },
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Data: ${dateKey(widget.date)}',
-                  style: TextStyle(color: muted(context), fontSize: 12),
-                ),
-                if (_client.isUsingDemoKey && food.source == 'USDA')
-                  const Padding(
-                    padding: EdgeInsets.only(top: 10),
-                    child: Text(
-                      'Usando a chave de demonstração do USDA (limite baixo). '
-                      'Configure sua chave na aba Perfil.',
-                      style: TextStyle(fontSize: 11, color: Colors.orange),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancelar'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Adicionar'),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    if (confirmed != true || !context.mounted) {
-      amountController.dispose();
+  Future<void> _toggleFood(FoodItem food) async {
+    if (_selected.containsKey(food.fdcId)) {
+      setState(() => _selected.remove(food.fdcId));
       return;
     }
+    final edited = await showPortionEditor(
+      context,
+      _initialPortion(food),
+      title: 'Ajustar porção',
+    );
+    if (edited == null || !mounted) return;
+    setState(() => _selected[food.fdcId] = edited);
+  }
 
-    final amount = double.tryParse(
-          amountController.text.replaceAll(',', '.'),
-        ) ??
-        food.servingSize;
-    if (amount <= 0) {
-      amountController.dispose();
-      return;
-    }
+  Future<void> _editSelected(int fdcId) async {
+    final current = _selected[fdcId];
+    if (current == null) return;
+    final edited = await showPortionEditor(context, current);
+    if (edited == null || !mounted) return;
+    setState(() => _selected[fdcId] = edited);
+  }
 
-    final factor = amount / 100;
-    await widget.state.addEntry(
-      DiaryEntry(
-        id: DateTime.now().microsecondsSinceEpoch.toString(),
+  Future<void> _confirm() async {
+    if (_selected.isEmpty) return;
+    final navigator = Navigator.of(context);
+    final now = DateTime.now();
+    var index = 0;
+    final entries = _selected.entries.map((item) {
+      final portion = item.value;
+      final created = now.add(Duration(microseconds: index++));
+      return DiaryEntry(
+        id: '${now.microsecondsSinceEpoch}_${item.key}',
         date: dateKey(widget.date),
-        meal: meal,
-        fdcId: food.fdcId,
-        foodName: food.displayName,
-        grams: amount,
-        unit: unit,
-        kcal: food.kcal * factor,
-        protein: food.protein * factor,
-        carbs: food.carbs * factor,
-        fat: food.fat * factor,
-        createdAt: DateTime.now(),
-      ),
-    );
-    amountController.dispose();
-    widget.onAdded();
+        meal: widget.meal,
+        fdcId: item.key,
+        foodName: portion.name,
+        grams: portion.amount,
+        unit: portion.unit,
+        kcal: portion.kcal,
+        protein: portion.protein,
+        carbs: portion.carbs,
+        fat: portion.fat,
+        createdAt: created,
+      );
+    }).toList();
 
+    await widget.state.addEntries(entries);
     if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${food.displayName} adicionado ao diário.'),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    navigator.pop(entries.length);
   }
 
   Future<void> _deleteCustomFood(FoodItem food) async {
@@ -399,6 +283,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
       ),
     );
     if (confirmed != true || !mounted) return;
+    _selected.remove(food.fdcId);
     await widget.state.removeCustomFood(food.fdcId);
     messenger.showSnackBar(
       SnackBar(content: Text('${food.name} excluído.')),
@@ -449,6 +334,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
   }
 
   Future<void> _lookupBarcode(String code) async {
+    final messenger = ScaffoldMessenger.of(context);
     showDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -474,10 +360,10 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
     }
 
     if (!mounted) return;
-    Navigator.of(context).pop(); // fecha o diálogo de carregamento
+    Navigator.of(context).pop();
 
     if (food != null) {
-      await _selectFood(food);
+      await _toggleFood(food);
       return;
     }
 
@@ -503,6 +389,8 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
     );
     if (register == true && mounted) {
       await _openCustomFoodDialog(barcode: code);
+    } else if (error != null) {
+      messenger.showSnackBar(SnackBar(content: Text(error)));
     }
   }
 
@@ -596,7 +484,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
                   ),
                   const SizedBox(height: 14),
                   Text(
-                    'Informe os valores nutricionais por 100 $unit:',
+                    'Valores nutricionais por 100 $unit:',
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -736,7 +624,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${food.name} salvo em Meus alimentos.')),
       );
-      await _selectFood(food);
+      await _toggleFood(food);
     } finally {
       nameController.dispose();
       brandController.dispose();
@@ -752,188 +640,206 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Alimentos',
-                          style: Theme.of(context).textTheme.labelLarge
-                              ?.copyWith(
-                                color: Theme.of(context).colorScheme.primary,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 1.2,
-                              ),
-                        ),
-                        Text(
-                          'Buscar e registrar',
-                          style: Theme.of(context).textTheme.titleLarge
-                              ?.copyWith(fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
+    final theme = Theme.of(context);
+    return Scaffold(
+      appBar: AppBar(
+        leading: const MacWindowDots(size: 8, padding: EdgeInsets.zero),
+        title: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Adicionar alimentos'),
+            Text(
+              'Selecione um ou vários',
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.normal),
+            ),
+          ],
+        ),
+        centerTitle: false,
+        actions: [
+          if (_selected.isNotEmpty)
+            TextButton(
+              onPressed: () => setState(_selected.clear),
+              child: const Text('Limpar'),
+            ),
+          IconButton(
+            tooltip: 'Fechar',
+            onPressed: () => Navigator.of(context).pop(0),
+            icon: const Icon(Icons.close),
+          ),
+        ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Divider(height: 1, color: outlineSoft(context)),
+        ),
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 14, 20, 6),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: _controller,
+                  textInputAction: TextInputAction.search,
+                  onSubmitted: (_) => _submit(),
+                  onChanged: (_) => setState(() {}),
+                  decoration: InputDecoration(
+                    hintText: 'Ex.: filé de sasami, feijão, Coca-Cola',
+                    prefixIcon: const Icon(Icons.search),
+                    fillColor: softSurface(context),
+                    suffixIcon: _controller.text.isEmpty
+                        ? null
+                        : IconButton(
+                            tooltip: 'Limpar busca',
+                            onPressed: () {
+                              _controller.clear();
+                              _submit('');
+                            },
+                            icon: const Icon(Icons.close),
+                          ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      dateKey(widget.date),
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: Theme.of(context).colorScheme.onPrimaryContainer,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _controller,
-                textInputAction: TextInputAction.search,
-                onSubmitted: (_) => _submit(),
-                decoration: InputDecoration(
-                  hintText: 'Ex.: feijão, pão de queijo, Big Mac',
-                  prefixIcon: const Icon(Icons.search),
-                  filled: true,
-                  fillColor: softSurface(context),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide.none,
-                  ),
-                  suffixIcon: _controller.text.isEmpty
-                      ? null
-                      : IconButton(
-                          tooltip: 'Limpar busca',
-                          onPressed: () {
-                            _controller.clear();
-                            _submit('');
-                          },
-                          icon: const Icon(Icons.close),
-                        ),
                 ),
-                onChanged: (_) => setState(() {}),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _openBarcodeScanner,
-                      icon: const Icon(Icons.qr_code_scanner_outlined, size: 18),
-                      label: const Text('Ler código'),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _openCustomFoodDialog,
-                      icon: const Icon(Icons.add_circle_outline, size: 18),
-                      label: const Text('Cadastrar alimento'),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Text(
-                    'Adicionar em:',
-                    style: TextStyle(fontSize: 12, color: muted(context)),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          for (final option in AppState.meals)
-                            Padding(
-                              padding: const EdgeInsets.only(right: 6),
-                              child: ChoiceChip(
-                                label: Text(option.$2),
-                                selected: _meal == option.$1,
-                                onSelected: (_) =>
-                                    setState(() => _meal = option.$1),
-                                visualDensity: VisualDensity.compact,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                children: [
-                  for (final source in _sourceFilters)
-                    FilterChip(
-                      avatar: Icon(source.$3, size: 16),
-                      label: Text(source.$2),
-                      selected: _sources.contains(source.$1),
-                      onSelected: (_) => _toggleSource(source.$1),
-                      visualDensity: VisualDensity.compact,
-                    ),
-                  if (_loadingUsda)
-                    const Padding(
-                      padding: EdgeInsets.all(8),
-                      child: SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                height: 34,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
+                const SizedBox(height: 10),
+                Row(
                   children: [
-                    for (final category in FoodCatalog.categories)
-                      Padding(
-                        padding: const EdgeInsets.only(right: 6),
-                        child: ChoiceChip(
-                          label: Text(category),
-                          selected: _category == category,
-                          onSelected: (_) => _selectCategory(category),
-                          visualDensity: VisualDensity.compact,
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _openBarcodeScanner,
+                        icon: const Icon(Icons.qr_code_scanner_outlined, size: 18),
+                        label: const Text('Ler código'),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _openCustomFoodDialog,
+                        icon: const Icon(Icons.add_circle_outline, size: 18),
+                        label: const Text('Cadastrar alimento'),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    for (final source in _sourceFilters)
+                      FilterChip(
+                        avatar: Icon(source.$3, size: 16),
+                        label: Text(source.$2),
+                        selected: _sources.contains(source.$1),
+                        onSelected: (_) => _toggleSource(source.$1),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    if (_loadingUsda || _loadingOff)
+                      const Padding(
+                        padding: EdgeInsets.all(8),
+                        child: SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(strokeWidth: 2),
                         ),
                       ),
                   ],
                 ),
-              ),
-            ],
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 34,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      for (final category in FoodCatalog.categories)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 6),
+                          child: ChoiceChip(
+                            label: Text(category),
+                            selected: _category == category,
+                            onSelected: (_) => _selectCategory(category),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
+          Divider(height: 1, color: outlineSoft(context)),
+          Expanded(child: _buildBody(context)),
+        ],
+      ),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          border: Border(top: BorderSide(color: outlineSoft(context))),
         ),
-        Expanded(child: _buildBody(context)),
-      ],
+        padding: EdgeInsets.fromLTRB(
+          20,
+          10,
+          20,
+          10 + MediaQuery.viewPaddingOf(context).bottom,
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              backgroundColor: theme.colorScheme.primaryContainer,
+              child: Text(
+                '${_selected.length}',
+                style: TextStyle(
+                  color: theme.colorScheme.onPrimaryContainer,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _selected.isEmpty
+                        ? 'Nenhum alimento selecionado'
+                        : '${_selected.length} ${_selected.length == 1 ? 'alimento selecionado' : 'alimentos selecionados'}',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    '${_selected.values.fold<double>(0, (s, p) => s + p.kcal).round()} kcal',
+                    style: TextStyle(fontSize: 11, color: muted(context)),
+                  ),
+                ],
+              ),
+            ),
+            FilledButton.icon(
+              onPressed: _selected.isEmpty ? null : _confirm,
+              icon: const Icon(Icons.check, size: 18),
+              label: const Text('Adicionar'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _foodTile(FoodItem food) {
+    final selected = _selected.containsKey(food.fdcId);
+    return _FoodTile(
+      food: food,
+      selected: selected,
+      portion: selected ? _selected[food.fdcId] : null,
+      onToggle: () => _toggleFood(food),
+      onEdit: selected ? () => _editSelected(food.fdcId) : null,
+      onDelete: food.source == 'custom' ? () => _deleteCustomFood(food) : null,
     );
   }
 
   Widget _buildBody(BuildContext context) {
     final query = _controller.text.trim();
-    if (query.isEmpty) {
-      return _buildSuggestions(context);
-    }
+    if (query.isEmpty) return _buildSuggestions(context);
 
     final hasLocal = _localResults.isNotEmpty;
     final hasUsda = _usdaResults.isNotEmpty;
@@ -949,10 +855,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
             children: [
               Icon(Icons.search_off, size: 42, color: Colors.orange.shade700),
               const SizedBox(height: 12),
-              Text(
-                'Nada encontrado para “$query”.',
-                textAlign: TextAlign.center,
-              ),
+              Text('Nada encontrado para “$query”.', textAlign: TextAlign.center),
               const SizedBox(height: 6),
               Text(
                 'Tente outro termo ou ative os filtros USDA / Open Food Facts.',
@@ -966,9 +869,8 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
     }
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
-        const SizedBox(height: 8),
         if (hasLocal) ...[
           _SectionTitle(
             title: 'Catálogo local',
@@ -976,18 +878,10 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
             icon: Icons.inventory_2_outlined,
           ),
           const SizedBox(height: 8),
-          ..._localResults.map(
-            (food) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: _FoodTile(
-                food: food,
-                onTap: () => _selectFood(food),
-                onDelete: food.source == 'custom'
-                    ? () => _deleteCustomFood(food)
-                    : null,
-              ),
-            ),
-          ),
+          ..._localResults.map((food) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _foodTile(food),
+              )),
         ],
         if (_error != null) ...[
           const SizedBox(height: 8),
@@ -997,10 +891,6 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
           const SizedBox(height: 8),
           _Notice(text: _offError!),
         ],
-        if (_loadingUsda || _loadingOff) ...[
-          const SizedBox(height: 14),
-          const Center(child: CircularProgressIndicator()),
-        ],
         if (hasOff) ...[
           const SizedBox(height: 12),
           _SectionTitle(
@@ -1009,18 +899,10 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
             icon: Icons.qr_code_scanner_outlined,
           ),
           const SizedBox(height: 8),
-          ..._offResults.map(
-            (food) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: _FoodTile(
-                food: food,
-                onTap: () => _selectFood(food),
-                onDelete: food.source == 'custom'
-                    ? () => _deleteCustomFood(food)
-                    : null,
-              ),
-            ),
-          ),
+          ..._offResults.map((food) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _foodTile(food),
+              )),
         ],
         if (hasUsda) ...[
           const SizedBox(height: 12),
@@ -1030,18 +912,14 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
             icon: Icons.public_outlined,
           ),
           const SizedBox(height: 8),
-          ..._usdaResults.map(
-            (food) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: _FoodTile(
-                food: food,
-                onTap: () => _selectFood(food),
-                onDelete: food.source == 'custom'
-                    ? () => _deleteCustomFood(food)
-                    : null,
-              ),
-            ),
-          ),
+          ..._usdaResults.map((food) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _foodTile(food),
+              )),
+        ],
+        if (searching) ...[
+          const SizedBox(height: 14),
+          const Center(child: CircularProgressIndicator()),
         ],
       ],
     );
@@ -1065,7 +943,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
     ];
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
         Text(
           'Atalhos',
@@ -1084,12 +962,12 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
             for (final shortcut in shortcuts)
               InkWell(
                 onTap: () => _selectCategory(shortcut.$3),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(14),
                 child: Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.surfaceContainerLow,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: outlineSoft(context)),
                   ),
                   child: Column(
@@ -1103,10 +981,9 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
                       Text(
                         shortcut.$1,
                         textAlign: TextAlign.center,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                     ],
@@ -1141,23 +1018,16 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
             ),
           )
         else
-          ..._localResults.take(20).map(
+          ..._localResults.take(40).map(
                 (food) => Padding(
                   padding: const EdgeInsets.only(bottom: 8),
-                  child: _FoodTile(
-                food: food,
-                onTap: () => _selectFood(food),
-                onDelete: food.source == 'custom'
-                    ? () => _deleteCustomFood(food)
-                    : null,
-              ),
+                  child: _foodTile(food),
                 ),
               ),
         const SizedBox(height: 10),
         const _Notice(
-          text: 'O catálogo reúne alimentos brasileiros, tabela TACO, '
-              'suplementos e redes de fast food. Ative Open Food Facts ou USDA '
-              'para buscar em bases online.',
+          text: 'Selecione vários alimentos, ajuste as porções e confirme '
+              'todos de uma vez.',
         ),
       ],
     );
@@ -1195,33 +1065,39 @@ class _SectionTitle extends StatelessWidget {
 
 class _FoodTile extends StatelessWidget {
   final FoodItem food;
-  final VoidCallback onTap;
+  final bool selected;
+  final PortionData? portion;
+  final VoidCallback onToggle;
+  final VoidCallback? onEdit;
   final VoidCallback? onDelete;
 
-  const _FoodTile({required this.food, required this.onTap, this.onDelete});
+  const _FoodTile({
+    required this.food,
+    required this.selected,
+    required this.portion,
+    required this.onToggle,
+    this.onEdit,
+    this.onDelete,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final color = food.source == 'brasil'
-        ? const Color(0xFF1B7F5A)
-        : food.source == 'fastfood'
-            ? const Color(0xFFD98C3F)
-            : const Color(0xFF3F72AF);
+    final theme = Theme.of(context);
+    final color = switch (food.source) {
+      'brasil' => const Color(0xFF1B7F5A),
+      'fastfood' => const Color(0xFFD98C3F),
+      'custom' => const Color(0xFF8A6BB0),
+      _ => const Color(0xFF3F72AF),
+    };
 
     return Card(
       child: ListTile(
-        onTap: onTap,
-        leading: CircleAvatar(
-          backgroundColor: color.withValues(alpha: 0.12),
-          child: Icon(
-            food.source == 'fastfood'
-                ? Icons.fastfood_outlined
-                : food.source == 'brasil'
-                    ? Icons.flag_outlined
-                    : Icons.public_outlined,
-            color: color,
-            size: 19,
-          ),
+        onTap: onToggle,
+        selected: selected,
+        selectedTileColor: theme.colorScheme.primary.withValues(alpha: 0.06),
+        leading: Checkbox(
+          value: selected,
+          onChanged: (_) => onToggle(),
         ),
         title: Text(
           food.displayName,
@@ -1235,22 +1111,34 @@ class _FoodTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '${food.kcalForServing.round()} kcal por '
-                '${food.servingSize.toStringAsFixed(0)} ${food.servingUnit} • '
-                'P ${food.proteinForServing.round()} • '
-                'C ${food.carbsForServing.round()} • '
-                'G ${food.fatForServing.round()}',
-                style: const TextStyle(fontSize: 11),
+                selected && portion != null
+                    ? '${portion!.amount.toStringAsFixed(0)} ${portion!.unit} • '
+                        '${portion!.kcal.round()} kcal • '
+                        'P ${portion!.protein.round()} • C ${portion!.carbs.round()} • G ${portion!.fat.round()}'
+                    : '${food.kcalForServing.round()} kcal por '
+                        '${food.servingSize.toStringAsFixed(0)} ${food.servingUnit} • '
+                        'P ${food.proteinForServing.round()} • '
+                        'C ${food.carbsForServing.round()} • '
+                        'G ${food.fatForServing.round()}',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: selected ? theme.colorScheme.primary : muted(context),
+                ),
               ),
               const SizedBox(height: 3),
-              _SourceBadge(source: food.source),
+              _SourceBadge(source: food.source, color: color),
             ],
           ),
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.add_circle_outline, color: Colors.green),
+            if (onEdit != null)
+              IconButton(
+                tooltip: 'Editar porção',
+                onPressed: onEdit,
+                icon: const Icon(Icons.tune_outlined, size: 19),
+              ),
             if (onDelete != null)
               IconButton(
                 tooltip: 'Excluir alimento',
@@ -1258,7 +1146,7 @@ class _FoodTile extends StatelessWidget {
                 icon: Icon(
                   Icons.delete_outline,
                   size: 18,
-                  color: Theme.of(context).colorScheme.error,
+                  color: theme.colorScheme.error,
                 ),
               ),
           ],
@@ -1270,8 +1158,9 @@ class _FoodTile extends StatelessWidget {
 
 class _SourceBadge extends StatelessWidget {
   final String source;
+  final Color? color;
 
-  const _SourceBadge({required this.source});
+  const _SourceBadge({required this.source, this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -1284,28 +1173,21 @@ class _SourceBadge extends StatelessWidget {
       'openfoodfacts' => 'OPEN FOOD FACTS',
       _ => 'USDA',
     };
-    final color = switch (source) {
-      'brasil' => const Color(0xFF1B7F5A),
-      'custom' => const Color(0xFF8A6BB0),
-      'taco' => const Color(0xFF2E7D9A),
-      'fastfood' => const Color(0xFFD98C3F),
-      'suplemento' => const Color(0xFFB0467A),
-      'openfoodfacts' => const Color(0xFF4A6FA5),
-      _ => const Color(0xFF3F72AF),
-    };
+    final badgeColor = color ?? const Color(0xFF3F72AF);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(6),
+        color: badgeColor.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(5),
+        border: Border.all(color: badgeColor.withValues(alpha: 0.25)),
       ),
       child: Text(
         label,
         style: TextStyle(
-          fontSize: 9,
+          fontSize: 8,
           fontWeight: FontWeight.w800,
           letterSpacing: 0.6,
-          color: color,
+          color: badgeColor,
         ),
       ),
     );
@@ -1320,19 +1202,18 @@ class _Notice extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(14),
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(color: outlineSoft(context)),
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.info_outline, size: 18, color: Colors.orange.shade700),
-          const SizedBox(width: 10),
+          Icon(Icons.info_outline, size: 16, color: muted(context)),
+          const SizedBox(width: 8),
           Expanded(
-            child: Text(text, style: const TextStyle(fontSize: 12)),
+            child: Text(text, style: TextStyle(fontSize: 11, color: muted(context))),
           ),
         ],
       ),
