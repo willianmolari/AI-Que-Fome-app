@@ -9,7 +9,6 @@ import '../services/open_food_facts_client.dart';
 import '../services/usda_client.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
-import '../widgets/mac_window_dots.dart';
 import '../widgets/portion_editor.dart';
 
 const _sourceFilters = [
@@ -643,7 +642,6 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        leading: const MacWindowDots(size: 8, padding: EdgeInsets.zero),
         title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1084,7 +1082,7 @@ class _FoodTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final color = switch (food.source) {
-      'brasil' => const Color(0xFF1B7F5A),
+      'brasil' => const Color(0xFF007AFF),
       'fastfood' => const Color(0xFFD98C3F),
       'custom' => const Color(0xFF8A6BB0),
       _ => const Color(0xFF3F72AF),

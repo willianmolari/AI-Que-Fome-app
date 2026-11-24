@@ -5,7 +5,6 @@ import '../models/user_profile.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/macro_bar.dart';
-import '../widgets/mac_window_dots.dart';
 import '../widgets/portion_editor.dart';
 import '../widgets/water_card.dart';
 import '../widgets/week_calendar.dart';
@@ -49,10 +48,10 @@ const _mealIcons = <String, IconData>{
 };
 
 const _mealColors = <String, Color>{
-  'cafe': Color(0xFFD98C3F),
-  'almoco': Color(0xFF1B7F5A),
-  'jantar': Color(0xFF3F72AF),
-  'lanches': Color(0xFF8A6BB0),
+  'cafe': Color(0xFFFF9F0A),
+  'almoco': Color(0xFF007AFF),
+  'jantar': Color(0xFF5E5CE6),
+  'lanches': Color(0xFFAF52DE),
 };
 
 class DiaryScreen extends StatelessWidget {
@@ -254,7 +253,6 @@ class DiaryScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const MacWindowDots(),
                     Text(
                       'Meu diário',
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
@@ -370,7 +368,7 @@ class _SummaryCard extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 22),
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFF146A4C), Color(0xFF25A175)],
+                colors: [Color(0xFF0A58C2), Color(0xFF2E8BFF)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -484,7 +482,7 @@ class _SummaryCard extends StatelessWidget {
                   label: 'Proteína',
                   value: totals['protein'] ?? 0,
                   goal: goal.goalProtein,
-                  color: const Color(0xFF3F72AF),
+                  color: const Color(0xFF007AFF),
                 ),
                 const SizedBox(height: 12),
                 MacroBar(
@@ -616,6 +614,7 @@ class _MealCard extends StatelessWidget {
                         ),
                         onDismissed: (_) => onDelete(entry.id),
                         child: ListTile(
+                          onTap: () => onEdit(entry),
                           contentPadding: const EdgeInsets.symmetric(vertical: 4),
                           leading: CircleAvatar(
                             radius: 4,
@@ -646,15 +645,11 @@ class _MealCard extends StatelessWidget {
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
-                              const SizedBox(width: 2),
-                              IconButton(
-                                tooltip: 'Editar porção',
-                                onPressed: () => onEdit(entry),
-                                icon: Icon(
-                                  Icons.tune_outlined,
-                                  size: 18,
-                                  color: muted(context),
-                                ),
+                              const SizedBox(width: 6),
+                              Icon(
+                                Icons.chevron_right,
+                                size: 16,
+                                color: muted(context),
                               ),
                             ],
                           ),

@@ -21,7 +21,7 @@ class _WeeklyChartState extends State<WeeklyChart> {
   String _metric = 'kcal';
 
   static const _metrics = [
-    ('kcal', 'Calorias', Icons.local_fire_department_outlined, Color(0xFF1B7F5A)),
+    ('kcal', 'Calorias', Icons.local_fire_department_outlined, Color(0xFF007AFF)),
     ('protein', 'Proteína', Icons.fitness_center_outlined, Color(0xFF3F72AF)),
     ('carbs', 'Carbo', Icons.grain_outlined, Color(0xFFD98C3F)),
     ('fat', 'Gordura', Icons.opacity_outlined, Color(0xFF8A6BB0)),

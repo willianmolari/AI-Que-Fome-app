@@ -1,8 +1,10 @@
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nutridobra/data/food_catalog.dart';
 import 'package:nutridobra/models/diary_entry.dart';
+import 'package:nutridobra/screens/diary_screen.dart';
 import 'package:nutridobra/services/storage_service.dart';
 import 'package:nutridobra/state/app_state.dart';
 import 'package:nutridobra/widgets/portion_editor.dart';
@@ -49,8 +51,20 @@ void main() {
       }
     });
 
-    test('catálogo local tem mais de 400 itens', () {
-      expect(FoodCatalog.all.length, greaterThan(400));
+    test('catálogo local tem mais de 600 itens', () {
+      expect(FoodCatalog.all.length, greaterThan(600));
+    });
+
+    test('auditoria inclui pratos, doces, bebidas e molhos que faltavam', () {
+      for (final term in [
+        'strogonoff de carne',
+        'bobó de camarão',
+        'bolo de fubá',
+        'caipirinha',
+        'molho de soja',
+      ]) {
+        expect(FoodCatalog.search(term), isNotEmpty, reason: term);
+      }
     });
   });
 
@@ -98,6 +112,44 @@ void main() {
 
       expect(state.entries.single.grams, 250);
       expect(state.entries.single.kcal, 250);
+    });
+
+    testWidgets('toque no alimento da refeição abre a edição', (tester) async {
+      final state = AppState(await StorageService.create());
+      await state.load();
+      final date = DateTime(2026, 11, 21);
+      await state.addEntry(
+        _entry(
+          id: 'a',
+          date: '2026-11-21',
+          meal: 'almoco',
+          name: 'Filé de sasami',
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: DiaryScreen(
+              state: state,
+              date: date,
+              onDateChanged: (_) {},
+              onAddFood: (_) {},
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.scrollUntilVisible(
+        find.text('Filé de sasami'),
+        400,
+        scrollable: find.byType(Scrollable).last,
+      );
+      await tester.tap(find.text('Filé de sasami'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Editar alimento'), findsOneWidget);
+      expect(find.text('Quantidade'), findsOneWidget);
     });
   });
 

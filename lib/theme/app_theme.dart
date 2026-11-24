@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 
-/// Tema inspirado no visual do macOS: superfícies neutras, cartões com borda
-/// fina, cantos arredondados e sombras suaves. Funciona nos modos claro e
-/// escuro.
+/// Tema com linguagem visual da Apple: fundo agrupado, cartões brancos com
+/// borda hairline, separadores finos, títulos grandes com tracking negativo e
+/// cantos arredondados. Funciona nos modos claro e escuro.
 class AppTheme {
   AppTheme._();
 
-  static const _seed = Color(0xFF137A55);
+  /// Azul do sistema da Apple, usado como acento em toda a interface.
+  static const _seed = Color(0xFF007AFF);
 
   static ThemeData light() => _build(Brightness.light);
 
@@ -18,17 +19,62 @@ class AppTheme {
       seedColor: _seed,
       brightness: brightness,
     );
-    final background = isDark ? const Color(0xFF1C1C1E) : const Color(0xFFF5F5F7);
-    final cardColor = isDark ? const Color(0xFF2C2C2E) : Colors.white;
-    final border = isDark
-        ? const Color(0xFF3A3A3C)
-        : const Color(0xFFE3E3E8);
+
+    // Cores do sistema em iOS: grouped background / secondary background /
+    // separador.
+    final background = isDark ? Colors.black : const Color(0xFFF2F2F7);
+    final cardColor = isDark ? const Color(0xFF1C1C1E) : Colors.white;
+    final border = isDark ? const Color(0xFF38383A) : const Color(0xFFE5E5EA);
+
+    final base = ThemeData(
+      useMaterial3: true,
+      brightness: brightness,
+      colorScheme: scheme,
+    );
+    final textTheme = base.textTheme.copyWith(
+      displaySmall: base.textTheme.displaySmall?.copyWith(
+        fontWeight: FontWeight.w700,
+        letterSpacing: -1,
+      ),
+      headlineSmall: base.textTheme.headlineSmall?.copyWith(
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.7,
+      ),
+      titleLarge: base.textTheme.titleLarge?.copyWith(
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.4,
+      ),
+      titleMedium: base.textTheme.titleMedium?.copyWith(
+        fontWeight: FontWeight.w600,
+        letterSpacing: -0.2,
+      ),
+      bodyLarge: base.textTheme.bodyLarge?.copyWith(letterSpacing: -0.1),
+      labelLarge: base.textTheme.labelLarge?.copyWith(
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0,
+      ),
+    );
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
+      textTheme: textTheme,
       scaffoldBackgroundColor: background,
       splashFactory: InkSparkle.splashFactory,
+      appBarTheme: AppBarTheme(
+        backgroundColor: background,
+        surfaceTintColor: background,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: false,
+        titleTextStyle: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.4,
+          color: scheme.onSurface,
+        ),
+        iconTheme: IconThemeData(color: scheme.primary),
+      ),
       cardTheme: CardThemeData(
         elevation: 0,
         color: cardColor,
@@ -38,11 +84,11 @@ class AppTheme {
           borderRadius: BorderRadius.circular(14),
           side: BorderSide(color: border),
         ),
-        shadowColor: isDark ? Colors.black54 : const Color(0x1A000000),
       ),
+      dividerTheme: DividerThemeData(color: border, space: 1, thickness: 1),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: isDark ? const Color(0xFF3A3A3C) : const Color(0xFFF5F5F7),
+        fillColor: isDark ? const Color(0xFF1C1C1E) : const Color(0xFFF2F2F7),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide(color: border),
@@ -60,10 +106,18 @@ class AppTheme {
           vertical: 12,
         ),
       ),
+      chipTheme: ChipThemeData(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(9),
+          side: BorderSide(color: border),
+        ),
+        side: BorderSide(color: border),
+        labelStyle: textTheme.labelLarge?.copyWith(fontSize: 12),
+      ),
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: ButtonStyle(
           shape: WidgetStateProperty.all(
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
           ),
         ),
       ),
@@ -87,8 +141,7 @@ class AppTheme {
         backgroundColor: cardColor,
         surfaceTintColor: cardColor,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-          side: BorderSide(color: border),
+          borderRadius: BorderRadius.circular(16),
         ),
       ),
       bottomSheetTheme: BottomSheetThemeData(
@@ -97,6 +150,10 @@ class AppTheme {
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: cardColor,

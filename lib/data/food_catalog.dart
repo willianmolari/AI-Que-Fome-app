@@ -10,6 +10,7 @@ import '../models/food_item.dart';
 import 'beverages.dart';
 import 'common_brazilian_foods.dart';
 import 'extra_foods.dart';
+import 'missing_foods.dart';
 import 'taco_foods.dart';
 
 class FoodCatalog {
@@ -37,6 +38,7 @@ class FoodCatalog {
     ..._brazilian,
     ...commonBrazilianFoods,
     ...extraFoods,
+    ...missingFoods,
     ..._fastFood,
     ..._supplements,
     ...tacoFoods,

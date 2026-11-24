@@ -33,10 +33,10 @@ Aplicativo Flutter original de diário alimentar com:
   porção/nome/macros de cada um e adicione todos de uma vez.
 - **edição de porção** nos itens já registrados no diário.
 - **cópia de refeição** entre dias e refeições (com opção de substituir).
-- **catálogo estendido** com 125 novos alimentos, incluindo filé de sasami e
-  muitas carnes.
-- **visual inspirado no macOS** e **gráfico semanal** de calorias, macros e
-  água.
+- **catálogo estendido** com 334 novos alimentos (carnes, filé de sasami,
+  pratos prontos, doces, bebidas, molhos, grãos, frutas e legumes).
+- **visual inspirado na Apple** (superfícies agrupadas, separadores finos e
+  títulos grandes) e **gráfico semanal** de calorias, macros e água.
 
 Este projeto é uma reimplementação funcional independente: não reutiliza
 código, layout, assets, marca, chaves ou banco de dados do aplicativo analisado.

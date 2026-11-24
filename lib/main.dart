@@ -100,10 +100,33 @@ class _HomePageState extends State<HomePage> {
         height: MediaQuery.sizeOf(sheetContext).height * 0.94,
         child: ClipRRect(
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          child: FoodSearchScreen(
-            state: widget.state,
-            date: _date,
-            meal: meal,
+          child: Column(
+            children: [
+              Container(
+                color: Theme.of(sheetContext).scaffoldBackgroundColor,
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Theme.of(sheetContext)
+                          .colorScheme
+                          .outline
+                          .withValues(alpha: 0.35),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: FoodSearchScreen(
+                  state: widget.state,
+                  date: _date,
+                  meal: meal,
+                ),
+              ),
+            ],
           ),
         ),
       ),
