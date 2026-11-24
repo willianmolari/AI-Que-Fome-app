@@ -37,6 +37,14 @@ locais do diário, dobras, peso e água são preservados.
 - `app-release.apk` — instalação direta no Android.
 - `app-release.aab` — pacote para publicação na Play Store.
 
+## SHA-256
+
+`app-release.apk`:
+`d0d3cc767290b5e65f7ee85f78bfd2f72f4a6efd4f8c34742414d744461492b5`
+
+`app-release.aab`:
+`f0bd2c5e51e1616713ffd1da90a98135c0499137c98e4a1a5960cc8b6352bfb0`
+
 ## Aviso
 
 Dobras cutâneas fornecem uma estimativa com erro típico de ±3–4% e não
