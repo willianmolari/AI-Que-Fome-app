@@ -16,8 +16,8 @@ próxima do visual do macOS.
   item do diário para alterar quantidade e valores nutricionais.
 - **Copiar refeição**: copie os itens do dia anterior (ou do próprio dia) para
   outra refeição, hoje ou amanhã, com opção de substituir os itens existentes.
-- **Catálogo ampliado**: mais de 125 novos alimentos, com destaque para carnes
-  (filé de sasami, filé de frango,coxa e sobrecoxa, contrafilé, alcatra,
+- **Catálogo ampliado**: 125 novos alimentos, com destaque para carnes
+  (filé de sasami, filé de frango, coxa e sobrecoxa, contrafilé, alcatra,
   picanha, cupim, costela, linguiças, peixes, frutos do mar, ovos e muito
   mais), além de queijos, iogurtes, castanhas e azeites.
 - **Visual macOS**: cartões com borda fina e cantos arredondados, superfícies
