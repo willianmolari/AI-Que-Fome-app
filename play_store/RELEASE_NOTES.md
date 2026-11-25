@@ -47,6 +47,14 @@ ser baixado na primeira abertura com internet.
 - `app-release.apk` — instalação direta no Android.
 - `app-release.aab` — pacote para publicação na Play Store.
 
+## SHA-256
+
+`app-release.apk`:
+`b5a56061587c692cdec2c2beb560482b10c78d793f36eefc1097ad7a04f4d245`
+
+`app-release.aab`:
+`ba7c0267381b4d5f9569656ba201e223f4ce9e572038582173cccabf900437a3`
+
 ## Aviso
 
 Dobras cutâneas e circunferências fornecem estimativas com erro dependente da
