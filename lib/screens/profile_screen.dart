@@ -38,7 +38,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late TextEditingController _protein;
   late TextEditingController _carbs;
   late TextEditingController _fat;
-  late TextEditingController _apiKey;
   late double _activity;
   late bool _darkMode;
 
@@ -62,14 +61,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ? _profile.bodyFatPercent.toStringAsFixed(1)
           : '',
     );
-    _waterGoal = TextEditingController(
-      text: '${_profile.waterGoalMl.round()}',
-    );
+    _waterGoal = TextEditingController(text: '${_profile.waterGoalMl.round()}');
     _kcal = TextEditingController(text: '${_profile.goalKcal.round()}');
     _protein = TextEditingController(text: '${_profile.goalProtein.round()}');
     _carbs = TextEditingController(text: '${_profile.goalCarbs.round()}');
     _fat = TextEditingController(text: '${_profile.goalFat.round()}');
-    _apiKey = TextEditingController(text: widget.state.apiKey ?? '');
     _activity = _profile.activityFactor;
     _darkMode = _profile.darkMode;
 
@@ -122,7 +118,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _protein.dispose();
     _carbs.dispose();
     _fat.dispose();
-    _apiKey.dispose();
     _updateService.dispose();
     super.dispose();
   }
@@ -132,21 +127,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   UserProfile _buildProfile() => UserProfile(
-        name: _name.text.trim().isEmpty ? 'Usuário' : _name.text.trim(),
-        sex: _profile.sex,
-        age: _num(_age, 30).round().clamp(10, 100),
-        weightKg: _num(_weight, 70).clamp(20, 400),
-        targetWeightKg: _num(_targetWeight, 70).clamp(20, 400),
-        heightCm: _num(_height, 170).clamp(100, 230),
-        activityFactor: _activity,
-        goalKcal: _num(_kcal, 2000).clamp(800, 10000),
-        goalProtein: _num(_protein).clamp(0, 500),
-        goalCarbs: _num(_carbs).clamp(0, 1000),
-        goalFat: _num(_fat).clamp(0, 400),
-        bodyFatPercent: _num(_bodyFat).clamp(0, 70),
-        waterGoalMl: _num(_waterGoal, 2000).clamp(250, 10000),
-        darkMode: _darkMode,
-      );
+    name: _name.text.trim().isEmpty ? 'Usuário' : _name.text.trim(),
+    sex: _profile.sex,
+    age: _num(_age, 30).round().clamp(10, 100),
+    weightKg: _num(_weight, 70).clamp(20, 400),
+    targetWeightKg: _num(_targetWeight, 70).clamp(20, 400),
+    heightCm: _num(_height, 170).clamp(100, 230),
+    activityFactor: _activity,
+    goalKcal: _num(_kcal, 2000).clamp(800, 10000),
+    goalProtein: _num(_protein).clamp(0, 500),
+    goalCarbs: _num(_carbs).clamp(0, 1000),
+    goalFat: _num(_fat).clamp(0, 400),
+    bodyFatPercent: _num(_bodyFat).clamp(0, 70),
+    waterGoalMl: _num(_waterGoal, 2000).clamp(250, 10000),
+    darkMode: _darkMode,
+  );
 
   Future<void> _save() async {
     final profile = _buildProfile();
@@ -157,7 +152,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         WeightRecord.create(date: DateTime.now(), weightKg: profile.weightKg),
       );
     }
-    await widget.state.setApiKey(_apiKey.text);
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Perfil e preferências salvos.')),
@@ -187,7 +181,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _kcal.text = candidate.suggestedKcal.round().toString();
       _protein.text = (candidate.weightKg * 1.6).round().toString();
       _fat.text = (candidate.weightKg * 0.9).round().toString();
-      final remaining = candidate.suggestedKcal -
+      final remaining =
+          candidate.suggestedKcal -
           (candidate.weightKg * 1.6 * 4) -
           (candidate.weightKg * 0.9 * 9);
       _carbs.text = (remaining / 4).clamp(0, 10000).round().toString();
@@ -198,7 +193,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final auth = _auth;
     if (auth == null) {
       setState(
-        () => _authError = 'Configure o google-services.json para usar o login.',
+        () =>
+            _authError = 'Configure o google-services.json para usar o login.',
       );
       return;
     }
@@ -300,8 +296,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         account == null
                             ? '?'
                             : account.displayName.isNotEmpty
-                                ? account.displayName[0].toUpperCase()
-                                : 'U',
+                            ? account.displayName[0].toUpperCase()
+                            : 'U',
                         style: TextStyle(
                           color: theme.colorScheme.onPrimaryContainer,
                           fontWeight: FontWeight.bold,
@@ -324,7 +320,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           const SizedBox(height: 2),
                           Text(
                             account?.email ?? 'Entre com sua conta Google',
-                            style: TextStyle(fontSize: 12, color: muted(context)),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: muted(context),
+                            ),
                           ),
                         ],
                       ),
@@ -343,7 +342,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             size: 18,
                           ),
                           label: Text(
-                            account == null ? 'Entrar com Google' : 'Sair da conta',
+                            account == null
+                                ? 'Entrar com Google'
+                                : 'Sair da conta',
                           ),
                         ),
                 ),
@@ -351,139 +352,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 10),
                   Text(
                     _authError!,
-                    style: TextStyle(fontSize: 11, color: Colors.orange.shade700),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 14),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.monitor_weight_outlined,
-                      size: 20,
-                      color: theme.colorScheme.primary,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Peso',
-                      style: theme.textTheme.titleMedium
-                          ?.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _weight,
-                        keyboardType: TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        onChanged: (_) => setState(() {}),
-                        decoration: const InputDecoration(
-                          labelText: 'Peso atual (kg)',
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextField(
-                        controller: _targetWeight,
-                        keyboardType: TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        decoration: const InputDecoration(
-                          labelText: 'Peso alvo (kg)',
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.tonalIcon(
-                    onPressed: _registerWeight,
-                    icon: const Icon(Icons.add_chart_outlined, size: 18),
-                    label: const Text('Registrar peso de hoje'),
-                  ),
-                ),
-                if (bmi.isFinite && bmi > 10 && bmi < 70)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Chip(
-                        label: Text('IMC estimado: ${bmi.toStringAsFixed(1)}'),
-                        visualDensity: VisualDensity.compact,
-                      ),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.orange.shade700,
                     ),
                   ),
-                const SizedBox(height: 16),
-                Text(
-                  'Evolução do peso',
-                  style: theme.textTheme.titleSmall
-                      ?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 6),
-                WeightChart(
-                  records: widget.state.weightHistory,
-                  targetKg: _num(_targetWeight),
-                  lineColor: theme.colorScheme.primary,
-                  targetColor: theme.colorScheme.tertiary,
-                  gridColor: theme.colorScheme.onSurface.withValues(alpha: 0.12),
-                  labelColor: muted(context),
-                ),
-                if (widget.state.weightHistory.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  const Divider(height: 1),
-                  const SizedBox(height: 8),
-                  for (final record
-                      in widget.state.weightHistory.reversed.take(5))
-                    ListTile(
-                      dense: true,
-                      contentPadding: EdgeInsets.zero,
-                      leading: Icon(
-                        Icons.monitor_weight_outlined,
-                        size: 18,
-                        color: muted(context),
-                      ),
-                      title: Text(
-                        '${record.date.day.toString().padLeft(2, '0')}/'
-                        '${record.date.month.toString().padLeft(2, '0')}/'
-                        '${record.date.year}',
-                        style: const TextStyle(fontSize: 13),
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            '${record.weightKg.toStringAsFixed(1)} kg',
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          IconButton(
-                            icon: Icon(
-                              Icons.delete_outline,
-                              size: 18,
-                              color: theme.colorScheme.error,
-                            ),
-                            tooltip: 'Excluir medição',
-                            onPressed: () => widget.state
-                                .removeWeightRecord(record.id),
-                          ),
-                        ],
-                      ),
-                    ),
                 ],
               ],
             ),
@@ -498,8 +371,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 Text(
                   'Dados pessoais',
-                  style: theme.textTheme.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.bold),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 14),
                 TextField(
@@ -578,7 +452,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     padding: const EdgeInsets.only(left: 4),
                     child: Text(
                       'Preenche automaticamente com a % da última avaliação '
-                      'salva em Dobras.',
+                      'salva em Medidas.',
                       style: TextStyle(fontSize: 11, color: muted(context)),
                     ),
                   ),
@@ -625,10 +499,147 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 Row(
                   children: [
+                    Icon(
+                      Icons.monitor_weight_outlined,
+                      size: 20,
+                      color: theme.colorScheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Peso',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _weight,
+                        keyboardType: TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        onChanged: (_) => setState(() {}),
+                        decoration: const InputDecoration(
+                          labelText: 'Peso atual (kg)',
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(
+                        controller: _targetWeight,
+                        keyboardType: TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: const InputDecoration(
+                          labelText: 'Peso alvo (kg)',
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.tonalIcon(
+                    onPressed: _registerWeight,
+                    icon: const Icon(Icons.add_chart_outlined, size: 18),
+                    label: const Text('Registrar peso de hoje'),
+                  ),
+                ),
+                if (bmi.isFinite && bmi > 10 && bmi < 70)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Chip(
+                        label: Text('IMC estimado: ${bmi.toStringAsFixed(1)}'),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 16),
+                Text(
+                  'Evolução do peso',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                WeightChart(
+                  records: widget.state.weightHistory,
+                  targetKg: _num(_targetWeight),
+                  lineColor: theme.colorScheme.primary,
+                  targetColor: theme.colorScheme.tertiary,
+                  gridColor: theme.colorScheme.onSurface.withValues(
+                    alpha: 0.12,
+                  ),
+                  labelColor: muted(context),
+                ),
+                if (widget.state.weightHistory.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  const Divider(height: 1),
+                  const SizedBox(height: 8),
+                  for (final record in widget.state.weightHistory.reversed.take(
+                    5,
+                  ))
+                    ListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(
+                        Icons.monitor_weight_outlined,
+                        size: 18,
+                        color: muted(context),
+                      ),
+                      title: Text(
+                        '${record.date.day.toString().padLeft(2, '0')}/'
+                        '${record.date.month.toString().padLeft(2, '0')}/'
+                        '${record.date.year}',
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '${record.weightKg.toStringAsFixed(1)} kg',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          IconButton(
+                            icon: Icon(
+                              Icons.delete_outline,
+                              size: 18,
+                              color: theme.colorScheme.error,
+                            ),
+                            tooltip: 'Excluir medição',
+                            onPressed: () =>
+                                widget.state.removeWeightRecord(record.id),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 14),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
                     Text(
                       'Metas diárias',
-                      style: theme.textTheme.titleMedium
-                          ?.copyWith(fontWeight: FontWeight.bold),
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const Spacer(),
                     TextButton.icon(
@@ -641,7 +652,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 TextField(
                   controller: _kcal,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Calorias (kcal)'),
+                  decoration: const InputDecoration(
+                    labelText: 'Calorias (kcal)',
+                  ),
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -696,8 +709,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 Text(
                   'Configurações',
-                  style: theme.textTheme.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.bold),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 SwitchListTile(
@@ -729,21 +743,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   onTap: _checkingUpdate ? null : _checkForUpdate,
                 ),
                 const Divider(height: 18),
-                TextField(
-                  controller: _apiKey,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Chave da API do USDA (opcional)',
-                    prefixIcon: Icon(Icons.key_outlined),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Sem chave, a busca USDA usa DEMO_KEY. O catálogo local '
-                  'funciona normalmente.',
-                  style: TextStyle(fontSize: 11, color: muted(context)),
-                ),
-                const SizedBox(height: 8),
                 Text(
                   'Tudo fica salvo neste dispositivo: diário, metas, perfil, '
                   'dobras e histórico de peso.',

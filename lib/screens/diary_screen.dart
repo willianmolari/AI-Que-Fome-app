@@ -58,6 +58,7 @@ class DiaryScreen extends StatelessWidget {
   final AppState state;
   final DateTime date;
   final ValueChanged<DateTime> onDateChanged;
+
   /// Recebe a chave da refeição onde os alimentos serão adicionados.
   final ValueChanged<String> onAddFood;
 
@@ -96,8 +97,93 @@ class DiaryScreen extends StatelessWidget {
       ),
     );
     if (!context.mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('${edited.name} atualizado.')));
+  }
+
+  /// Configura os slots extras de refeição. Vazios/desativados não aparecem.
+  Future<void> _editCustomMeals(BuildContext context) async {
+    final drafts = state.customMeals
+        .map((m) => m.copyWith())
+        .toList(growable: true);
+    final controllers = [
+      for (final meal in drafts) TextEditingController(text: meal.name),
+    ];
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Refeições personalizadas'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Nomeie e ative as refeições extras que você quer ver no '
+                    'diário. Slots vazios ou desativados ficam ocultos.',
+                    style: TextStyle(fontSize: 12, color: muted(context)),
+                  ),
+                  const SizedBox(height: 12),
+                  for (var i = 0; i < drafts.length; i++) ...[
+                    TextField(
+                      decoration: InputDecoration(
+                        labelText: 'Refeição ${i + 1}',
+                        hintText: 'Ex.: Lanche da tarde',
+                        isDense: true,
+                      ),
+                      controller: controllers[i],
+                      onChanged: (value) => setDialogState(
+                        () => drafts[i] = drafts[i].copyWith(
+                          name: value,
+                          enabled: value.trim().isNotEmpty
+                              ? true
+                              : drafts[i].enabled,
+                        ),
+                      ),
+                    ),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      dense: true,
+                      title: const Text(
+                        'Exibir no diário',
+                        style: TextStyle(fontSize: 13),
+                      ),
+                      value: drafts[i].enabled,
+                      onChanged: (value) => setDialogState(
+                        () => drafts[i] = drafts[i].copyWith(enabled: value),
+                      ),
+                    ),
+                    if (i < drafts.length - 1) const Divider(height: 8),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Salvar'),
+            ),
+          ],
+        ),
+      ),
+    );
+    for (final controller in controllers) {
+      controller.dispose();
+    }
+    if (confirmed != true || !context.mounted) return;
+    await state.updateCustomMeals(drafts);
+    if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${edited.name} atualizado.')),
+      const SnackBar(content: Text('Refeições personalizadas atualizadas.')),
     );
   }
 
@@ -153,12 +239,9 @@ class DiaryScreen extends StatelessWidget {
                 DropdownButtonFormField<String>(
                   initialValue: targetMeal,
                   decoration: const InputDecoration(labelText: 'Refeição'),
-                  items: AppState.meals
+                  items: state.availableMeals
                       .map(
-                        (m) => DropdownMenuItem(
-                          value: m.$1,
-                          child: Text(m.$2),
-                        ),
+                        (m) => DropdownMenuItem(value: m.$1, child: Text(m.$2)),
                       )
                       .toList(),
                   onChanged: (value) =>
@@ -256,16 +339,17 @@ class DiaryScreen extends StatelessWidget {
                     Text(
                       'Meu diário',
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                            color: Theme.of(context).colorScheme.primary,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 1.2,
-                          ),
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.2,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       formatDatePt(date),
-                      style: Theme.of(context).textTheme.titleLarge
-                          ?.copyWith(fontWeight: FontWeight.bold),
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
@@ -302,19 +386,32 @@ class DiaryScreen extends StatelessWidget {
                   children: [
                     Text(
                       'Refeições',
-                      style: Theme.of(context).textTheme.titleMedium
-                          ?.copyWith(fontWeight: FontWeight.bold),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const Spacer(),
                     Text(
                       '${entries.length} ${entries.length == 1 ? 'item' : 'itens'}',
                       style: TextStyle(fontSize: 12, color: muted(context)),
                     ),
+                    const SizedBox(width: 4),
+                    IconButton(
+                      tooltip: 'Refeições personalizadas',
+                      onPressed: () => _editCustomMeals(context),
+                      icon: const Icon(Icons.tune_outlined, size: 20),
+                      visualDensity: VisualDensity.compact,
+                      constraints: const BoxConstraints.tightFor(
+                        width: 32,
+                        height: 32,
+                      ),
+                      padding: EdgeInsets.zero,
+                    ),
                   ],
                 ),
               ),
               const SizedBox(height: 8),
-              ...AppState.meals.map(
+              ...state.availableMeals.map(
                 (meal) => _MealCard(
                   mealKey: meal.$1,
                   mealLabel: meal.$2,
@@ -332,10 +429,7 @@ class DiaryScreen extends StatelessWidget {
                     'Toque em “+” em uma refeição para buscar e adicionar '
                     'vários alimentos de uma vez.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: muted(context),
-                      fontSize: 13,
-                    ),
+                    style: TextStyle(color: muted(context), fontSize: 13),
                   ),
                 ),
             ],
@@ -405,14 +499,20 @@ class _SummaryCard extends StatelessWidget {
                           const SizedBox(width: 6),
                           const Text(
                             'kcal',
-                            style: TextStyle(color: Colors.white70, fontSize: 15),
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 15,
+                            ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 2),
                       Text(
                         'Meta de ${goal.goalKcal.round()} kcal',
-                        style: const TextStyle(color: Colors.white70, fontSize: 12),
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                        ),
                       ),
                       const SizedBox(height: 12),
                       Container(
@@ -615,7 +715,9 @@ class _MealCard extends StatelessWidget {
                         onDismissed: (_) => onDelete(entry.id),
                         child: ListTile(
                           onTap: () => onEdit(entry),
-                          contentPadding: const EdgeInsets.symmetric(vertical: 4),
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 4,
+                          ),
                           leading: CircleAvatar(
                             radius: 4,
                             backgroundColor: color,

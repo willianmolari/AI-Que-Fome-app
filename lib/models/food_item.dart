@@ -1,4 +1,4 @@
-/// Alimento normalizado a partir do USDA FoodData Central.
+/// Alimento normalizado do catálogo local ou de bases abertas.
 ///
 /// Os valores nutricionais são sempre armazenados por 100 g para que o mesmo
 /// registro possa ser reutilizado com qualquer porção informada pelo usuário.
@@ -17,7 +17,7 @@ class FoodItem {
   final double sugars;
 
   /// Origem do registro: `brasil`, `taco`, `fastfood`, `suplemento`,
-  /// `openfoodfacts` ou `USDA`.
+  /// `openfoodfacts`, `custom` ou `remoto`.
   final String source;
 
   /// Categoria usada nos filtros do catálogo local.
@@ -36,32 +36,33 @@ class FoodItem {
     required this.carbs,
     this.fiber = 0,
     this.sugars = 0,
-    this.source = 'USDA',
+    this.source = 'brasil',
     this.category,
   });
 
-  String get displayName => brand == null || brand!.trim().isEmpty
-      ? name
-      : '$name • $brand';
+  String get displayName =>
+      brand == null || brand!.trim().isEmpty ? name : '$name • $brand';
 
   String get sourceLabel => switch (source) {
-        'brasil' => 'Brasil',
-        'taco' => 'TACO',
-        'fastfood' => 'Fast food',
-        'suplemento' => 'Suplemento',
-        'openfoodfacts' => 'Open Food Facts',
-        _ => 'USDA',
-      };
+    'brasil' => 'Brasil',
+    'taco' => 'TACO',
+    'fastfood' => 'Fast food',
+    'suplemento' => 'Suplemento',
+    'openfoodfacts' => 'Open Food Facts',
+    'custom' => 'Meus alimentos',
+    'remoto' => 'Catálogo remoto',
+    _ => 'Local',
+  };
 
   /// Busca tolerante a acentos, caixa e ordem das palavras.
   bool matches(String rawQuery) {
     final query = normalizeFoodText(rawQuery);
     if (query.isEmpty) return true;
-    final haystack = normalizeFoodText('$name ${brand ?? ''} ${category ?? ''}');
+    final haystack = normalizeFoodText(
+      '$name ${brand ?? ''} ${category ?? ''}',
+    );
     if (haystack.contains(query)) return true;
-    return query
-        .split(RegExp(r'\s+'))
-        .every((part) => haystack.contains(part));
+    return query.split(RegExp(r'\s+')).every((part) => haystack.contains(part));
   }
 
   static String normalizeFoodText(String value) {
@@ -83,9 +84,8 @@ class FoodItem {
   double get fatForServing => _forServing(fat);
   double get carbsForServing => _forServing(carbs);
 
-  double _forServing(double value) => servingSize <= 0
-      ? 0
-      : value * servingSize / 100;
+  double _forServing(double value) =>
+      servingSize <= 0 ? 0 : value * servingSize / 100;
 
   double kcalFor(double grams) => kcal * grams / 100;
   double proteinFor(double grams) => protein * grams / 100;
@@ -93,36 +93,36 @@ class FoodItem {
   double carbsFor(double grams) => carbs * grams / 100;
 
   Map<String, dynamic> toJson() => {
-        'fdcId': fdcId,
-        'name': name,
-        'brand': brand,
-        'dataType': dataType,
-        'servingSize': servingSize,
-        'servingUnit': servingUnit,
-        'kcal': kcal,
-        'protein': protein,
-        'fat': fat,
-        'carbs': carbs,
-        'fiber': fiber,
-        'sugars': sugars,
-        'source': source,
-        'category': category,
-      };
+    'fdcId': fdcId,
+    'name': name,
+    'brand': brand,
+    'dataType': dataType,
+    'servingSize': servingSize,
+    'servingUnit': servingUnit,
+    'kcal': kcal,
+    'protein': protein,
+    'fat': fat,
+    'carbs': carbs,
+    'fiber': fiber,
+    'sugars': sugars,
+    'source': source,
+    'category': category,
+  };
 
   factory FoodItem.fromJson(Map<String, dynamic> json) => FoodItem(
-        fdcId: (json['fdcId'] as num).toInt(),
-        name: json['name'] as String? ?? 'Alimento',
-        brand: json['brand'] as String?,
-        dataType: json['dataType'] as String? ?? '',
-        servingSize: (json['servingSize'] as num?)?.toDouble() ?? 100,
-        servingUnit: json['servingUnit'] as String? ?? 'g',
-        kcal: (json['kcal'] as num?)?.toDouble() ?? 0,
-        protein: (json['protein'] as num?)?.toDouble() ?? 0,
-        fat: (json['fat'] as num?)?.toDouble() ?? 0,
-        carbs: (json['carbs'] as num?)?.toDouble() ?? 0,
-        fiber: (json['fiber'] as num?)?.toDouble() ?? 0,
-        sugars: (json['sugars'] as num?)?.toDouble() ?? 0,
-        source: json['source'] as String? ?? 'USDA',
-        category: json['category'] as String?,
-      );
+    fdcId: (json['fdcId'] as num).toInt(),
+    name: json['name'] as String? ?? 'Alimento',
+    brand: json['brand'] as String?,
+    dataType: json['dataType'] as String? ?? '',
+    servingSize: (json['servingSize'] as num?)?.toDouble() ?? 100,
+    servingUnit: json['servingUnit'] as String? ?? 'g',
+    kcal: (json['kcal'] as num?)?.toDouble() ?? 0,
+    protein: (json['protein'] as num?)?.toDouble() ?? 0,
+    fat: (json['fat'] as num?)?.toDouble() ?? 0,
+    carbs: (json['carbs'] as num?)?.toDouble() ?? 0,
+    fiber: (json['fiber'] as num?)?.toDouble() ?? 0,
+    sugars: (json['sugars'] as num?)?.toDouble() ?? 0,
+    source: json['source'] as String? ?? 'brasil',
+    category: json['category'] as String?,
+  );
 }

@@ -10,37 +10,37 @@ import 'package:nutridobra/utils/skinfold_calculator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 SkinfoldCalculation _calculation() => SkinfoldCalculator.calculate(
-      sex: 'male',
-      age: 30,
-      weightKg: 80,
-      sites: const SkinfoldSites(
-        chest: 12,
-        axilla: 10,
-        triceps: 12,
-        subscapular: 14,
-        abdomen: 18,
-        suprailiac: 16,
-        thigh: 14,
-      ),
-    );
+  sex: 'male',
+  age: 30,
+  weightKg: 80,
+  sites: const SkinfoldSites(
+    chest: 12,
+    axilla: 10,
+    triceps: 12,
+    subscapular: 14,
+    abdomen: 18,
+    suprailiac: 16,
+    thigh: 14,
+  ),
+);
 
 SkinfoldRecord _record(DateTime date) => SkinfoldRecord.create(
-      sex: 'male',
-      age: 30,
-      weightKg: 80,
-      sites: const SkinfoldSites(
-        chest: 12,
-        axilla: 10,
-        triceps: 12,
-        subscapular: 14,
-        abdomen: 18,
-        suprailiac: 16,
-        thigh: 14,
-      ),
-      calculation: _calculation(),
-      notes: 'Mesma técnica de medição',
-      createdAt: date,
-    );
+  sex: 'male',
+  age: 30,
+  weightKg: 80,
+  sites: const SkinfoldSites(
+    chest: 12,
+    axilla: 10,
+    triceps: 12,
+    subscapular: 14,
+    abdomen: 18,
+    suprailiac: 16,
+    thigh: 14,
+  ),
+  calculation: _calculation(),
+  notes: 'Mesma técnica de medição',
+  createdAt: date,
+);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -92,13 +92,17 @@ void main() {
 
     await tester.pumpWidget(MaterialApp(home: SkinfoldScreen(state: state)));
     await tester.pump();
+    await tester.tap(find.text('Jackson & Pollock (dobras)'));
+    await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
-      find.text('Histórico'),
+      find.textContaining('20 mai 2026'),
       400,
       scrollable: find.byType(Scrollable).first,
     );
+    await tester.pumpAndSettle();
 
-    expect(find.text('Histórico'), findsOneWidget);
+    // Um título é das dobras e outro é da nova seção de circunferências.
+    expect(find.text('Histórico'), findsNWidgets(2));
     expect(find.textContaining('20 mai 2026'), findsOneWidget);
     expect(find.text('Carregar'), findsNothing);
 

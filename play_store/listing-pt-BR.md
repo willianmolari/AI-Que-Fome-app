@@ -4,26 +4,31 @@
 Ai que fome
 
 ## Descrição curta (≤80 caracteres)
-Diário alimentar com catálogo brasileiro, metas e dobras Jackson-Pollock.
+Diário alimentar com catálogo brasileiro, metas e medidas corporais.
 
 ## Descrição completa
 
 Ai que fome é um diário alimentar em português para registrar o que você come,
-acompanhar metas e estimar sua composição corporal com dobras cutâneas.
+acompanhar metas e estimar sua composição corporal com dobras e circunferências.
 Simples, direto e sem anúncios.
 
 DIÁRIO ALIMENTAR
-- Registre alimentos em café da manhã, almoço, jantar e lanches.
+- Registre alimentos em café da manhã, almoço, jantar, lanches e até 4 refeições
+  personalizadas.
 - Calendário semanal com os dias que têm registros e barras de calorias.
 - Totais de calorias, proteína, carboidrato e gordura por dia.
 - Navegue entre dias e meses para rever o que foi comido.
+- Selecione vários alimentos de uma vez, ajuste as porções e copie refeições
+  entre dias.
 
 CATÁLOGO BRASILEIRO
-- Centenas de alimentos comuns no Brasil: aveia, leite semidesnatado, pães,
-  massas, legumes, frutas, carnes, pratos prontos e muito mais.
-- Tabela TACO-inspired offline, suplementos de marcas brasileiras e fast food.
-- Busca opcional no Open Food Facts (produtos do Brasil) e no USDA FoodData
-  Central — você escolhe a porção antes de adicionar.
+- Mais de mil alimentos comuns no Brasil: aveia, leite em pó, iogurtes, sucos,
+  pães, massas, féculas, carnes, pratos prontos e muito mais.
+- Tabela TACO-inspired offline, suplementos, marcas brasileiras e fast food,
+  incluindo Burger King, McDonald's, Demeter Burger e Posto Pelanda.
+- Busca opcional no Open Food Facts e leitura de código de barras — você escolhe
+  a porção antes de adicionar.
+- Lista ampliável por um arquivo público no GitHub, com cache para uso offline.
 - Filtros por origem e categoria para achar rápido o que procura.
 
 METAS E PERFIL
@@ -32,21 +37,25 @@ METAS E PERFIL
 - Altura, idade, sexo, nível de atividade e percentual de gordura.
 - Cálculo do IMC e da taxa metabólica estimada (Mifflin-St Jeor).
 
-DOBRAS CUTÂNEAS
-- Equações de Jackson & Pollock de 3 e 7 sítios, para homens e mulheres.
+MEDIDAS CORPORAIS
+- Equações de Jackson & Pollock de 3 e 7 sítios, mantidas em um painel
+  minimizado e expansível.
 - Resultado com densidade corporal, % de gordura, massa gorda e massa magra.
-- Histórico local: salve avaliações com data e observação, carregue ou exclua
-  registros antigas e acompanhe a evolução.
+- Circunferências com fita, estilo ISAK: pescoço, peito, abdômen, quadril,
+  coxas e braços flexionados/relaxados.
+- Histórico local para dobras e fita: salve com data e observação, carregue ou
+  exclua registros e acompanhe a evolução.
 - O % de gordura calculado pode preencher automaticamente o perfil.
 
 OUTROS
 - Entrar com Google (opcional) apenas para identificar sua conta.
-- Modo escuro em todas as telas.
+- Modo escuro em todas as telas e contador de água compacto.
 - Tudo é salvo no seu dispositivo: não há sincronização de diário nem
   telemetria própria.
 
-Aviso: dobras cutâneas fornecem uma estimativa com erro típico de ±3–4% e não
-substituem avaliação profissional (DEXA, BIA ou hidrodensitometria). Este app
+Aviso: dobras e circunferências fornecem estimativas com erro dependente da
+técnica e não substituem avaliação profissional (DEXA, BIA ou
+hidrodensitometria). Este app
 não fornece diagnóstico médico nem prescrição alimentar.
 
 ## Categoria
@@ -54,13 +63,14 @@ Saúde e fitness (Health & Fitness)
 
 ## Tags
 diário alimentar, contador de calorias, macronutrientes, dobras cutâneas,
-composição corporal, Jackson Pollock, alimentos brasileiros, TACO, metas,
-peso, IMC
+medidas corporais, composição corporal, Jackson Pollock, alimentos brasileiros,
+TACO, metas, peso, IMC
 
-## Notas da versão (1.0.0)
-Versão inicial: diário com 4 refeições e calendário semanal, catálogo
-brasileiro com busca em bases abertas, metas diárias, perfil com peso atual,
-peso alvo e gráfico, dobras Jackson-Pollock com histórico e modo escuro.
+## Notas da versão (1.3.0)
+Catálogo com 1.261 alimentos únicos e marcas brasileiras, lista ampliável por
+JSON público no GitHub, até 4 refeições personalizadas, aba Medidas com
+circunferências ISAK e histórico, perfil reorganizado e água compacta. Busca
+USDA removida; Open Food Facts e código de barras permanecem.
 
 ## Classificação de conteúdo — respostas sugeridas
 Todos os itens de violência, linguagem, sexualidade, álcool/tabaco/drogas,
@@ -71,8 +81,10 @@ Resultado esperado: **Todos**.
 - O app coleta dados? **Sim**, apenas dados de conta (nome e e-mail do Google)
   usados para autenticação.
 - Dados compartilhados com terceiros? **Não**.
-- Dados transmitidos na internet? Apenas os dados de autenticação via Firebase.
-- Diário, metas, dobras, peso e preferências ficam somente no dispositivo.
+- Dados transmitidos na internet? Autenticação via Firebase, download do
+  catálogo público e consultas ao Open Food Facts quando usadas.
+- Diário, metas, dobras, medidas, peso e preferências ficam somente no
+  dispositivo.
 - Criptografia em trânsito: **Sim** (Firebase Auth/HTTPS).
 - Dados podem ser excluídos pelo usuário? Sim — no app (registros) e pela
   conta Google/Firebase (dados de conta).
@@ -85,4 +97,4 @@ URL já publicada: <https://willianmolari.github.io/AI-Que-Fome-app/>.
 1. Diário com calendário semanal e totais de macronutrientes.
 2. Busca de alimentos com filtros e bases brasileiras.
 3. Perfil com peso atual, peso alvo e gráfico de evolução.
-4. Dobras Jackson-Pollock (3 e 7 sítios) com histórico.
+4. Aba Medidas: circunferências ISAK e dobras Jackson-Pollock com histórico.

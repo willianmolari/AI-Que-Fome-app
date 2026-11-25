@@ -39,7 +39,8 @@ void main() {
       'whey',
       sources: const {'suplemento'},
     );
-    expect(results.length, greaterThan(10));
+    // Registros repetidos de “Whey Protein” foram unificados pelo nome.
+    expect(results.length, greaterThanOrEqualTo(7));
     final brands = results.map((item) => item.brand).toSet();
     expect(brands, contains('Growth Supplements'));
     expect(brands, contains('Integral Médica'));

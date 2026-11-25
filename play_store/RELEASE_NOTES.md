@@ -1,51 +1,54 @@
-# Ai que fome — v1.2.1
+# Ai que fome — v1.3.0
 
-Ajustes de interface pedidos após a v1.2.0 e uma nova ampliação do catálogo
-local.
+Esta versão foca no banco de dados próprio, em refeições personalizadas e nas
+medidas corporais.
 
 ## Novidades
 
-- **Sem “três pontinhos”**: removidos os pontos coloridos do topo; o visual
-  agora segue a linguagem da Apple de forma mais sutil.
-- **Estilo Apple refinado e azul**: acento azul do sistema, fundo agrupado,
-  cartões brancos com borda hairline, separadores finos, títulos grandes,
-  cantos arredondados e modal com alça de arrasto no topo.
-- **Editar tocando no alimento**: para ajustar a porção de um item já lançado,
-  basta tocar diretamente no alimento dentro da refeição.
-- **Catálogo auditado e ampliado**: 209 novos itens de uso comum que faltavam,
-  como pratos prontos brasileiros, lanches, sobremesas, bebidas, molhos,
-  grãos, farinhas, frutas, legumes e castanhas. O catálogo local passa de 600
-  alimentos.
-- **Cópia de refeição** continua funcionando normalmente.
+- **Banco ampliado**: 508 novos alimentos e marcas — iogurtes, leite em pó,
+  sucos, Burger King, McDonald's, Demeter Burger, pratos do Posto Pelanda,
+  féculas, farinhas e outros itens brasileiros. O catálogo interno agora tem
+  1.261 registros únicos, sem duplicatas por nome.
+- **Catálogo editável no GitHub**: o app lê um JSON público na abertura e guarda
+  uma cópia local. Assim, novos alimentos podem ser adicionados ao arquivo sem
+  precisar compilar e publicar um novo APK. Sem internet, o cache continua
+  funcionando.
+- **Busca USDA removida**: sem chave de API e sem consulta ao USDA. Continuam
+  disponíveis o catálogo local, o Open Food Facts e a leitura de código de
+  barras.
+- **Até 4 refeições personalizadas**: nomeie e ative slots extras no diário.
+  Eles só aparecem quando configurados.
+- **Aba “Medidas”**: antigamente “Dobras”. Jackson & Pollock continua igual,
+  porém minimizado e expansível com um toque.
+- **Circunferências com fita (ISAK)**: pescoço, peito, abdômen, quadril, coxas
+  e braços flexionados/relaxados, com observação, data/hora, histórico,
+  carregamento e exclusão — no mesmo padrão do histórico de dobras.
+- **Perfil reorganizado**: dados pessoais primeiro, depois peso e demais
+  configurações.
+- **Contador de água compacto**: ocupa menos espaço no diário.
 
 ## Correções
 
-- Remoção dos pontos vermelho/amarelo/verde que não combinavam com o estilo
-  pedido.
-- Toque no alimento da refeição agora abre a edição diretamente.
+- Nomes repetidos no catálogo (carnes, whey e barras de proteína) foram
+  unificados.
+- Textos que citavam “Dobras” foram atualizados para “Medidas” onde necessário.
 
 ## Instalação
 
 Baixe `app-release.apk`, permita a instalação de fontes desconhecidas no
 Android e abra o arquivo. Requer Android 7.0 (API 24) ou superior.
 
-Para atualizar a partir da v1.2.0, basta instalar o APK por cima: os dados
-locais do diário, dobras, peso e água são preservados.
+Para atualizar a partir da v1.2.x, instale o APK por cima: diário, dobras,
+medidas, peso, água e preferências são preservados. O catálogo remoto passa a
+ser baixado na primeira abertura com internet.
 
 ## Arquivos desta release
 
 - `app-release.apk` — instalação direta no Android.
 - `app-release.aab` — pacote para publicação na Play Store.
 
-## SHA-256
-
-`app-release.apk`:
-`d0d3cc767290b5e65f7ee85f78bfd2f72f4a6efd4f8c34742414d744461492b5`
-
-`app-release.aab`:
-`f0bd2c5e51e1616713ffd1da90a98135c0499137c98e4a1a5960cc8b6352bfb0`
-
 ## Aviso
 
-Dobras cutâneas fornecem uma estimativa com erro típico de ±3–4% e não
-substituem avaliação profissional. O app não fornece diagnóstico médico.
+Dobras cutâneas e circunferências fornecem estimativas com erro dependente da
+técnica e do equipamento. O app não fornece diagnóstico médico nem prescrição
+alimentar.

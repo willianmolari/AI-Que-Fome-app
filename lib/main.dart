@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -71,7 +73,10 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _updateService = UpdateService();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _checkUpdate());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_checkUpdate());
+      unawaited(widget.state.refreshCatalog());
+    });
   }
 
   @override
@@ -110,10 +115,9 @@ class _HomePageState extends State<HomePage> {
                     width: 36,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Theme.of(sheetContext)
-                          .colorScheme
-                          .outline
-                          .withValues(alpha: 0.35),
+                      color: Theme.of(
+                        sheetContext,
+                      ).colorScheme.outline.withValues(alpha: 0.35),
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
@@ -175,7 +179,7 @@ class _HomePageState extends State<HomePage> {
           NavigationDestination(
             icon: Icon(Icons.monitor_heart_outlined),
             selectedIcon: Icon(Icons.monitor_heart),
-            label: 'Dobras',
+            label: 'Medidas',
           ),
         ],
       ),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/skinfold_record.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
+import '../widgets/body_measures_section.dart';
 import '../utils/skinfold_calculator.dart';
 
 class SkinfoldScreen extends StatefulWidget {
@@ -30,9 +31,7 @@ class _SkinfoldScreenState extends State<SkinfoldScreen> {
     final profile = widget.state.profile;
     _sex = profile.sex;
     _age = TextEditingController(text: '${profile.age}');
-    _weight = TextEditingController(
-      text: profile.weightKg.toStringAsFixed(1),
-    );
+    _weight = TextEditingController(text: profile.weightKg.toStringAsFixed(1));
   }
 
   @override
@@ -77,7 +76,9 @@ class _SkinfoldScreenState extends State<SkinfoldScreen> {
       );
       setState(() => _result = result);
     } on ArgumentError catch (e) {
-      setState(() => _error = e.message.replaceFirst('Invalid argument(s): ', ''));
+      setState(
+        () => _error = e.message.replaceFirst('Invalid argument(s): ', ''),
+      );
     }
   }
 
@@ -217,14 +218,14 @@ class _SkinfoldScreenState extends State<SkinfoldScreen> {
   }
 
   SkinfoldSites _currentSites() => SkinfoldSites(
-        chest: _value(_sites[0]),
-        axilla: _value(_sites[1]),
-        triceps: _value(_sites[2]),
-        subscapular: _value(_sites[3]),
-        abdomen: _value(_sites[4]),
-        suprailiac: _value(_sites[5]),
-        thigh: _value(_sites[6]),
-      );
+    chest: _value(_sites[0]),
+    axilla: _value(_sites[1]),
+    triceps: _value(_sites[2]),
+    subscapular: _value(_sites[3]),
+    abdomen: _value(_sites[4]),
+    suprailiac: _value(_sites[5]),
+    thigh: _value(_sites[6]),
+  );
 
   void _loadRecord(SkinfoldRecord record) {
     final three = record.threeSite;
@@ -272,9 +273,9 @@ class _SkinfoldScreenState extends State<SkinfoldScreen> {
     if (confirmed != true) return;
     await widget.state.removeSkinfoldRecord(record.id);
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Avaliação excluída.')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Avaliação excluída.')));
   }
 
   Future<void> _clearHistory() async {
@@ -300,237 +301,272 @@ class _SkinfoldScreenState extends State<SkinfoldScreen> {
     if (confirmed != true) return;
     await widget.state.clearSkinfoldHistory();
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Histórico limpo.')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Histórico limpo.')));
   }
 
   @override
   Widget build(BuildContext context) {
-    final threeSiteIndexes = _sex == 'male'
-        ? const {0, 4, 6}
-        : const {2, 5, 6};
+    final threeSiteIndexes = _sex == 'male' ? const {0, 4, 6} : const {2, 5, 6};
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
       children: [
         Text(
-          'Dobras cutâneas',
-          style: Theme.of(context).textTheme.headlineMedium
-              ?.copyWith(fontWeight: FontWeight.bold),
+          'Medidas',
+          style: Theme.of(
+            context,
+          ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 4),
         Text(
-          'Jackson & Pollock — 3 e 7 sítios',
+          'Dobras Jackson & Pollock e circunferências com fita',
           style: TextStyle(color: muted(context)),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 12),
         Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 26,
-                  backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                  child: Icon(
-                    Icons.accessibility_new_outlined,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Text(
-                    'Preencha as dobras em milímetros. As equações calculam '
-                    'densidade corporal, percentual de gordura e massas '
-                    'gorda/magra.',
-                    style: TextStyle(fontSize: 12, color: muted(context)),
-                  ),
-                ),
-              ],
+          clipBehavior: Clip.antiAlias,
+          child: ExpansionTile(
+            initiallyExpanded: false,
+            tilePadding: const EdgeInsets.symmetric(horizontal: 14),
+            title: const Text(
+              'Jackson & Pollock (dobras)',
+              style: TextStyle(fontWeight: FontWeight.bold),
             ),
-          ),
-        ),
-        const SizedBox(height: 14),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              children: [
-                SegmentedButton<String>(
-                  segments: const [
-                    ButtonSegment(value: 'male', label: Text('Masculino')),
-                    ButtonSegment(value: 'female', label: Text('Feminino')),
-                  ],
-                  selected: {_sex},
-                  onSelectionChanged: (value) =>
-                      setState(() => _sex = value.first),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _age,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(labelText: 'Idade'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextField(
-                        controller: _weight,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'Peso (kg)',
+            subtitle: const Text('3 e 7 sítios — toque para expandir'),
+            children: [
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 26,
+                        backgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.primaryContainer,
+                        child: Icon(
+                          Icons.accessibility_new_outlined,
+                          color: Theme.of(context).colorScheme.primary,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 14),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      'Medidas (mm)',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const Spacer(),
-                    TextButton(
-                      onPressed: _clear,
-                      child: const Text('Limpar'),
-                    ),
-                  ],
-                ),
-                for (var i = 0; i < SkinfoldCalculator.siteLabels.length; i++)
-                  _SiteField(
-                    controller: _sites[i],
-                    label: SkinfoldCalculator.siteLabels[i],
-                    isThreeSite: threeSiteIndexes.contains(i),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Text(
+                          'Preencha as dobras em milímetros. As equações calculam '
+                          'densidade corporal, percentual de gordura e massas '
+                          'gorda/magra.',
+                          style: TextStyle(fontSize: 12, color: muted(context)),
+                        ),
+                      ),
+                    ],
                   ),
-                const SizedBox(height: 4),
-                Text(
-                  'Meça sempre no mesmo lado do corpo, com o mesmo caliper e '
-                  'com a pele levantada suavemente entre o polegar e o indicador.',
-                  style: TextStyle(fontSize: 12, color: muted(context)),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: FilledButton.icon(
-                onPressed: _calculate,
-                icon: const Icon(Icons.calculate_outlined),
-                label: const Text('Calcular'),
-              ),
-            ),
-            if (_result != null) ...[
-              const SizedBox(width: 10),
-              Expanded(
-                child: FilledButton.tonalIcon(
-                  onPressed: _saveResult,
-                  icon: const Icon(Icons.save_outlined),
-                  label: const Text('Salvar no histórico'),
                 ),
               ),
-            ],
-          ],
-        ),
-        if (_error != null) ...[
-          const SizedBox(height: 14),
-          _Notice(text: _error!, isError: true),
-        ],
-        if (_result != null) ...[
-          const SizedBox(height: 18),
-          Text(
-            'Resultados',
-            style: Theme.of(context).textTheme.titleLarge
-                ?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 10),
-          _ResultCard(
-            title: 'Equação de 3 sítios',
-            result: _result!.threeSite,
-          ),
-          const SizedBox(height: 12),
-          _ResultCard(title: 'Equação de 7 sítios', result: _result!.sevenSite),
-          const SizedBox(height: 16),
-          const _Notice(
-            text: 'Estimativa com erro típico de ±3–4%. Não substitui avaliação '
-                'profissional (DEXA, BIA ou hidrodensitometria).',
-          ),
-        ],
-        const SizedBox(height: 24),
-        Row(
-          children: [
-            Text(
-              'Histórico',
-              style: Theme.of(context).textTheme.titleLarge
-                  ?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const Spacer(),
-            if (widget.state.skinfoldHistory.isNotEmpty)
-              TextButton.icon(
-                onPressed: _clearHistory,
-                icon: const Icon(Icons.delete_sweep_outlined, size: 18),
-                label: const Text('Limpar'),
+              const SizedBox(height: 14),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(18),
+                  child: Column(
+                    children: [
+                      SegmentedButton<String>(
+                        segments: const [
+                          ButtonSegment(
+                            value: 'male',
+                            label: Text('Masculino'),
+                          ),
+                          ButtonSegment(
+                            value: 'female',
+                            label: Text('Feminino'),
+                          ),
+                        ],
+                        selected: {_sex},
+                        onSelectionChanged: (value) =>
+                            setState(() => _sex = value.first),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _age,
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(
+                                labelText: 'Idade',
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: TextField(
+                              controller: _weight,
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(
+                                labelText: 'Peso (kg)',
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
               ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        if (widget.state.skinfoldHistory.isEmpty)
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(22),
-              child: Column(
+              const SizedBox(height: 14),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            'Medidas (mm)',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const Spacer(),
+                          TextButton(
+                            onPressed: _clear,
+                            child: const Text('Limpar'),
+                          ),
+                        ],
+                      ),
+                      for (
+                        var i = 0;
+                        i < SkinfoldCalculator.siteLabels.length;
+                        i++
+                      )
+                        _SiteField(
+                          controller: _sites[i],
+                          label: SkinfoldCalculator.siteLabels[i],
+                          isThreeSite: threeSiteIndexes.contains(i),
+                        ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Meça sempre no mesmo lado do corpo, com o mesmo caliper e '
+                        'com a pele levantada suavemente entre o polegar e o indicador.',
+                        style: TextStyle(fontSize: 12, color: muted(context)),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
                 children: [
-                  Icon(
-                    Icons.history_toggle_off_outlined,
-                    size: 34,
-                    color: muted(context),
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: _calculate,
+                      icon: const Icon(Icons.calculate_outlined),
+                      label: const Text('Calcular'),
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Nenhuma avaliação salva.',
-                    style: TextStyle(color: muted(context)),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Calcule as dobras e toque em “Salvar no histórico”.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 12, color: muted(context)),
-                  ),
+                  if (_result != null) ...[
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: FilledButton.tonalIcon(
+                        onPressed: _saveResult,
+                        icon: const Icon(Icons.save_outlined),
+                        label: const Text('Salvar no histórico'),
+                      ),
+                    ),
+                  ],
                 ],
               ),
-            ),
-          )
-        else
-          Column(
-            children: [
-              for (final record in widget.state.skinfoldHistory)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: _HistoryTile(
-                    record: record,
-                    onLoad: () => _loadRecord(record),
-                    onDelete: () => _deleteRecord(record),
+              if (_error != null) ...[
+                const SizedBox(height: 14),
+                _Notice(text: _error!, isError: true),
+              ],
+              if (_result != null) ...[
+                const SizedBox(height: 18),
+                Text(
+                  'Resultados',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 10),
+                _ResultCard(
+                  title: 'Equação de 3 sítios',
+                  result: _result!.threeSite,
+                ),
+                const SizedBox(height: 12),
+                _ResultCard(
+                  title: 'Equação de 7 sítios',
+                  result: _result!.sevenSite,
+                ),
+                const SizedBox(height: 16),
+                const _Notice(
+                  text:
+                      'Estimativa com erro típico de ±3–4%. Não substitui avaliação '
+                      'profissional (DEXA, BIA ou hidrodensitometria).',
+                ),
+              ],
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Text(
+                    'Histórico',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
+                  const Spacer(),
+                  if (widget.state.skinfoldHistory.isNotEmpty)
+                    TextButton.icon(
+                      onPressed: _clearHistory,
+                      icon: const Icon(Icons.delete_sweep_outlined, size: 18),
+                      label: const Text('Limpar'),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              if (widget.state.skinfoldHistory.isEmpty)
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(22),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.history_toggle_off_outlined,
+                          size: 34,
+                          color: muted(context),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Nenhuma avaliação salva.',
+                          style: TextStyle(color: muted(context)),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Calcule as dobras e toque em “Salvar no histórico”.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 12, color: muted(context)),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                Column(
+                  children: [
+                    for (final record in widget.state.skinfoldHistory)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: _HistoryTile(
+                          record: record,
+                          onLoad: () => _loadRecord(record),
+                          onDelete: () => _deleteRecord(record),
+                        ),
+                      ),
+                  ],
                 ),
             ],
           ),
+        ),
+        const SizedBox(height: 12),
+        BodyMeasuresSection(state: widget.state),
       ],
     );
   }
@@ -620,8 +656,9 @@ class _ResultCard extends StatelessWidget {
           children: [
             Text(
               title,
-              style: Theme.of(context).textTheme.titleMedium
-                  ?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 6),
             Text(
@@ -864,7 +901,8 @@ class _HistoryTile extends StatelessWidget {
                     Expanded(
                       child: _Metric(
                         label: 'Massa gorda',
-                        value: '${record.sevenSite.fatMassKg.toStringAsFixed(1)} kg',
+                        value:
+                            '${record.sevenSite.fatMassKg.toStringAsFixed(1)} kg',
                       ),
                     ),
                     Expanded(
@@ -878,9 +916,7 @@ class _HistoryTile extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Chip(
-                  label: Text(
-                    'Classificação: ${record.sevenSite.category}',
-                  ),
+                  label: Text('Classificação: ${record.sevenSite.category}'),
                   visualDensity: VisualDensity.compact,
                 ),
                 const SizedBox(height: 12),
